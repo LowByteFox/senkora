@@ -7,7 +7,7 @@ pkg_check_modules(SPIDERMONKE REQUIRED mozjs-102)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 
-add_executable(hello ./hello.cpp ./boilerplate.cpp)
+add_executable(hello ./src/hello.cpp ./src/boilerplate.cpp)
 target_link_libraries(hello ${SPIDERMONKE_LIBRARIES})
 target_include_directories(hello PUBLIC ${SPIDERMONKE_INCLUDE_DIRS})
 target_compile_options(hello PUBLIC ${SPIDERMONKE_CFLAGS_OTHER})
