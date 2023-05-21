@@ -3,6 +3,7 @@
 #include <codecvt>
 #include <cstdio>
 #include <js/Modules.h>
+#include <js/PropertyAndElement.h>
 #include <js/String.h>
 #include <js/TypeDecls.h>
 #include <js/Utility.h>

@@ -3,6 +3,7 @@
 #include <js/CompilationAndEvaluation.h>
 #include <js/CompileOptions.h>
 #include <js/Modules.h>
+#include <js/PropertyAndElement.h>
 #include <js/SourceText.h>
 #include <js/TypeDecls.h>
 #include <jsapi.h>

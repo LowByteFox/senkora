@@ -1,2 +1,2 @@
 import { data } from "./data.js";
-print(data);
+__PRIVATE.print(data);

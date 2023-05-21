@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iterator>
 #include <js/CharacterEncoding.h>
+#include <js/Context.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
 #include <js/RootingAPI.h>
@@ -64,11 +65,13 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
 
     JSAutoRealm ar(ctx, global);
     JS::SetModuleResolveHook(JS_GetRuntime(ctx), resolveHook);
-    JS::RootedObject mod(ctx, JS_NewPlainObject(ctx));
-    JS_DefineFunction(ctx, mod, "print", &print, 1, 1);
-    JS_DefineFunction(ctx, global, "print", &print, 1, 1);
+    JS::RootedObject privateMod(ctx, JS_NewPlainObject(ctx));
+    JS::RootedValue v(ctx);
+    v.setObject(*privateMod);
 
-    registerBuiltinModule(ctx, std::u16string(u"senkora:print"), mod);
+    JS_DefineFunction(ctx, privateMod, "print", &print, 0, 0);
+
+    JS_SetProperty(ctx, global, "__PRIVATE", v);
 
     std::string code = Senkora::readFile(fileName);
     return executeCode(ctx, code.c_str(), fileName);
