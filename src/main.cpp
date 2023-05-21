@@ -4,7 +4,9 @@
 #include <fstream>
 #include <iterator>
 #include <js/CharacterEncoding.h>
+#include <js/Modules.h>
 #include <js/PropertyAndElement.h>
+#include <js/RootingAPI.h>
 #include <js/TypeDecls.h>
 #include <js/Utility.h>
 #include <js/Value.h>
@@ -15,31 +17,28 @@
 #include <js/Object.h>
 #include <mozilla/Utf8.h>
 #include <Senkora.hpp>
+#include <string>
 
 #include "boilerplate.hpp"
-
-std::string readFile(std::string name) {
-    std::ifstream file(name);
-    if (!file.good()) return "";
-
-    std::string out;
-    std::string line;
-
-    while (std::getline(file, line)) {
-        out += line + "\n";
-    }
-
-    file.close();
-
-    return out;
-}
+#include "moduleResolver.hpp"
 
 static bool executeCode(JSContext *ctx, const char* code, const char* fileName) {
-    JSScript *compiledScript = Senkora::CompileScript(ctx, fileName, code);
-    JS::RootedScript script(ctx);
-    script.set(compiledScript);
+    JS::RootedObject mod(ctx, Senkora::CompileModule(ctx, fileName, code));
+    if (!mod) {
+        boilerplate::ReportAndClearException(ctx);
+        return false;
+    }
 
-    if (!JS_ExecuteScript(ctx, script)) return false;
+    if (!JS::ModuleInstantiate(ctx, mod)) { 
+        boilerplate::ReportAndClearException(ctx);
+        return false;
+    }
+
+    JS::RootedValue rval(ctx);
+    if (!JS::ModuleEvaluate(ctx, mod, &rval)) {
+        boilerplate::ReportAndClearException(ctx);
+        return false;
+    }
 
     return true;
 }
@@ -48,8 +47,7 @@ static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
   JS::HandleValue val = args.get(0);
   if (val.isString()) {
-      JS::RootedString str(ctx);
-      str.set(val.toString());
+      JS::RootedString str(ctx, val.toString());
       JS::UniqueChars chars(JS_EncodeStringToUTF8(ctx, str));
       std::cout << chars.get() << std::endl;
   }
@@ -65,9 +63,14 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
     if (!global) return false;
 
     JSAutoRealm ar(ctx, global);
-
+    JS::SetModuleResolveHook(JS_GetRuntime(ctx), resolveHook);
+    JS::RootedObject mod(ctx, JS_NewPlainObject(ctx));
+    JS_DefineFunction(ctx, mod, "print", &print, 1, 1);
     JS_DefineFunction(ctx, global, "print", &print, 1, 1);
-    std::string code = readFile(fileName);
+
+    registerBuiltinModule(ctx, std::u16string(u"senkora:print"), mod);
+
+    std::string code = Senkora::readFile(fileName);
     return executeCode(ctx, code.c_str(), fileName);
 }
 

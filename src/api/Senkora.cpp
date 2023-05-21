@@ -1,4 +1,5 @@
 #include <cstring>
+#include <fstream>
 #include <js/CompilationAndEvaluation.h>
 #include <js/CompileOptions.h>
 #include <js/Modules.h>
@@ -28,5 +29,20 @@ namespace Senkora {
         if (!source.init(ctx, code, strlen(code), JS::SourceOwnership::Borrowed)) return nullptr;
 
         return JS::CompileModule(ctx, options, source);
+    }
+
+    std::string readFile(std::string name) {
+        std::ifstream file(name);
+        if (!file.good()) return "";
+
+        std::stringstream ss;
+
+        ss << file.rdbuf();
+
+        std::string out = ss.str();
+
+        file.close();
+
+        return out;
     }
 }

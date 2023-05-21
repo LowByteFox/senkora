@@ -1,2 +1,2 @@
-const x = "Ahoj";
-print(x)
+import { data } from "./data.js";
+print(data);
