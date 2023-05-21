@@ -44,10 +44,11 @@ void boilerplate::ReportAndClearException(JSContext* cx) {
 // initialized as it is needed to run any JavaScript). If the 'initSelfHosting'
 // argument is false, we will not initialize self-hosting and instead leave
 // that to the caller.
-bool boilerplate::RunExample(bool (*task)(JSContext*), bool initSelfHosting) {
+bool boilerplate::Run(bool (*task)(JSContext* ctx, int argc, const char **argv), bool initSelfHosting, int argc, const char **argv) {
     if (!JS_Init()) {
         return false;
     }
+
 
     JSContext* cx = JS_NewContext(JS::DefaultHeapMaxBytes);
     if (!cx) {
@@ -58,7 +59,9 @@ bool boilerplate::RunExample(bool (*task)(JSContext*), bool initSelfHosting) {
         return false;
     }
 
-    if (!task(cx)) {
+    if (!task(cx, argc, argv)) {
+        JS_DestroyContext(cx);
+        JS_ShutDown();
         return false;
     }
 

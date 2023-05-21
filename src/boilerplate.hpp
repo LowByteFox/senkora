@@ -10,6 +10,5 @@ namespace boilerplate {
 
     void ReportAndClearException(JSContext* cx);
 
-    bool RunExample(bool (*task)(JSContext*), bool initSelfHosting = true);
-
+    bool Run(bool (*task)(JSContext* ctx, int argc, const char **argv), bool initSelfHosting, int argc, const char **argv);
 }  // namespace boilerplate
