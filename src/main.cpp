@@ -1,9 +1,11 @@
 #include <cstdio>
 
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <iterator>
 #include <js/CharacterEncoding.h>
+#include <js/Class.h>
 #include <js/Context.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
@@ -18,10 +20,18 @@
 #include <js/Object.h>
 #include <mozilla/Utf8.h>
 #include <Senkora.hpp>
+#include <stack>
 #include <string>
+#include <unistd.h>
 
 #include "boilerplate.hpp"
 #include "moduleResolver.hpp"
+
+#define DEBUG(str) printf("%s\n", str);
+
+namespace fs = std::filesystem;
+
+std::stack<std::string> dirs;
 
 static bool executeCode(JSContext *ctx, const char* code, const char* fileName) {
     JS::RootedObject mod(ctx, Senkora::CompileModule(ctx, fileName, code));
@@ -36,6 +46,7 @@ static bool executeCode(JSContext *ctx, const char* code, const char* fileName) 
     }
 
     JS::RootedValue rval(ctx);
+    
     if (!JS::ModuleEvaluate(ctx, mod, &rval)) {
         boilerplate::ReportAndClearException(ctx);
         return false;
@@ -64,20 +75,27 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
     if (!global) return false;
 
     JSAutoRealm ar(ctx, global);
+
     JS::SetModuleResolveHook(JS_GetRuntime(ctx), resolveHook);
     JS::RootedObject privateMod(ctx, JS_NewPlainObject(ctx));
     JS::RootedValue v(ctx);
+
     v.setObject(*privateMod);
+    const JSClass *obj = JS::GetClass(&v.getObjectPayload());
 
-    JS_DefineFunction(ctx, privateMod, "print", &print, 0, 0);
+    JS_DefineFunction(ctx, privateMod, "print", &print, 1, 0);
 
-    JS_SetProperty(ctx, global, "__PRIVATE", v);
+    JS_SetProperty(ctx, global, "__PRIVATE_CUZ_FF_STUPID", v);
 
-    std::string code = Senkora::readFile(fileName);
+    std::string code = "import \"";
+    code += fileName;
+    code += "\"";
+    std::string path = fs::path(fs::absolute(fileName)).parent_path();
     return executeCode(ctx, code.c_str(), fileName);
 }
 
 int main(int argc, const char* argv[]) {
+    dirs.push(fs::current_path());
     if (!boilerplate::Run(run, true, argc, argv)) {
         return 1;
     }

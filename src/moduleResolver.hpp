@@ -6,7 +6,7 @@
 #include <string>
 #include <jsapi.h>
 
-bool registerBuiltinModule(JSContext *ctx, std::u16string name, JSObject *module);
+bool registerBuiltinModule(JSContext *ctx, std::string name, JSObject *module);
 JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleObject moduleRequest);
 
 #endif
