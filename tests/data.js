@@ -1,1 +1,3 @@
-import "./myjs.js";
+export default {
+  hello: "world",
+};

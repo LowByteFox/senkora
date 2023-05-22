@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.22)
 project(senkora VERSION 0.2 LANGUAGES C CXX)
 
 find_package(PkgConfig REQUIRED)
@@ -20,4 +20,4 @@ target_link_libraries(main senkora)
 target_include_directories(main PUBLIC ${SPIDERMONKE_INCLUDE_DIRS})
 target_include_directories(main PUBLIC ./src/api/)
 target_compile_options(main PUBLIC ${SPIDERMONKE_CFLAGS_OTHER})
-set(EXECUTABLE_OUTPUT_PATH ../)
+set(EXECUTABLE_OUTPUT_PATH ../dist)
