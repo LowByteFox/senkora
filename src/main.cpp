@@ -11,16 +11,19 @@
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
 #include <js/RootingAPI.h>
+#include <js/String.h>
 #include <js/TypeDecls.h>
 #include <js/Utility.h>
 #include <js/Value.h>
 #include <jsapi.h>
+#include <jsfriendapi.h>
 #include <js/CompilationAndEvaluation.h>
 #include <js/SourceText.h>
 #include <js/Conversions.h>
 #include <js/Object.h>
 #include <mozilla/Utf8.h>
 #include <Senkora.hpp>
+#include <ostream>
 #include <stack>
 #include <string>
 #include <unistd.h>
@@ -47,6 +50,14 @@ static bool executeCode(JSContext *ctx, const char* code, const char* fileName) 
     return true;
 }
 
+void PrintNonPrivateProperties(JSContext* cx, JSObject *obj) {
+    JS::IdVector idprops(cx);
+    JS::MutableHandleIdVector props = idprops;
+    JS::HandleObject ob(obj);
+
+    js::GetPropertyKeys(cx, ob, JSITER_SYMBOLS, &idprops);
+}
+
 static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
   JS::HandleValue val = args.get(0);
@@ -54,6 +65,15 @@ static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
       JS::RootedString str(ctx, val.toString());
       JS::UniqueChars chars(JS_EncodeStringToUTF8(ctx, str));
       std::cout << chars.get() << std::endl;
+  } else if (val.isNumber()) {
+      std::cout << val.toNumber() << std::endl;
+  } else if (val.isBoolean()) {
+      std::cout << val.toBoolean() << std::endl;
+  } else if (val.isNullOrUndefined()) {
+      if (val.isNull()) std::cout << "null" << std::endl;
+      else std::cout << "undefined" << std::endl;
+  } else if (val.isObject()) {
+      PrintNonPrivateProperties(ctx, &val.toObject());
   }
   args.rval().setNull();
   return true;
@@ -81,9 +101,13 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
     JS_SetProperty(ctx, global, "__PRIVATE_CUZ_FF_STUPID", v);
 
     std::string currentPath = fs::current_path();
-    std::string filePath = fs::path(currentPath + "/" + fileName).lexically_normal();
+    std::string filePath = fileName;
+    if (fileName[0] != '/') {
+        filePath = fs::path(currentPath + "/" + fileName).lexically_normal();
+    }
     std::string code = Senkora::readFile(filePath);
     if (code.length() == 0) return false;
+
     return executeCode(ctx, code.c_str(), filePath.c_str());
 }
 
