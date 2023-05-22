@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <js/CompilationAndEvaluation.h>
@@ -5,6 +6,7 @@
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
 #include <js/SourceText.h>
+#include <js/String.h>
 #include <js/TypeDecls.h>
 #include <jsapi.h>
 #include <mozilla/Utf8.h>
@@ -29,7 +31,18 @@ namespace Senkora {
         JS::SourceText<mozilla::Utf8Unit> source;
         if (!source.init(ctx, code, strlen(code), JS::SourceOwnership::Borrowed)) return nullptr;
 
-        return JS::CompileModule(ctx, options, source);
+        JS::RootedObject mod(ctx, JS::CompileModule(ctx, options, source));
+        JS::RootedValue mod2(ctx);
+        JS::RootedValue val(ctx);
+        JS::RootedString test(ctx, JS_NewStringCopyZ(ctx, fileName));
+        JS::RootedValue nig(ctx);
+        nig.setString(test);
+        JS::RootedObject meta(ctx, JS_NewPlainObject(ctx));
+        JS_SetProperty(ctx, meta, "url", nig);
+        mod2.setObject(*meta.get());
+        JS::SetModulePrivate(mod, mod2);
+
+        return mod;
     }
 
     std::string readFile(std::string name) {

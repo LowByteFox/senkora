@@ -8,5 +8,5 @@
 
 bool registerBuiltinModule(JSContext *ctx, std::string name, JSObject *module);
 JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleObject moduleRequest);
-
+bool metadataHook(JSContext* ctx, JS::HandleValue private_ref, JS::HandleObject meta);
 #endif

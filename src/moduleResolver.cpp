@@ -4,11 +4,15 @@
 #include <codecvt>
 #include <cstdio>
 #include <filesystem>
+#include <iostream>
+#include <js/CharacterEncoding.h>
+#include <js/Context.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
 #include <js/String.h>
 #include <js/TypeDecls.h>
 #include <js/Utility.h>
+#include <jsapi.h>
 #include <locale>
 #include <stack>
 
@@ -29,7 +33,12 @@ std::string To_UTF8(const std::u16string &s)
     return conv.to_bytes(s);
 }
 
+bool metadataHook(JSContext* ctx, JS::HandleValue private_ref, JS::HandleObject meta) {
+    return true;
+}
+
 JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleObject moduleRequest) {
+
     JS::Rooted<JSString *> specifierString(
         ctx, JS::GetModuleRequestSpecifier(ctx, moduleRequest)
     );
@@ -41,7 +50,6 @@ JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleO
 
     std::u16string name(specChars.get());
     std::string converted = To_UTF8(name);
-    std::string absolute = fs::absolute(converted);
 
     auto search = moduleRegistry.find(converted);
     if (search != moduleRegistry.end()) return search->second;

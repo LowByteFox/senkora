@@ -6,6 +6,7 @@
 #include <iterator>
 #include <js/CharacterEncoding.h>
 #include <js/Class.h>
+#include <js/CompileOptions.h>
 #include <js/Context.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
@@ -31,27 +32,29 @@
 
 namespace fs = std::filesystem;
 
+/* Global variables */
 std::stack<std::string> dirs;
 
 static bool executeCode(JSContext *ctx, const char* code, const char* fileName) {
+    JS::CompileOptions options(ctx);
+
     JS::RootedObject mod(ctx, Senkora::CompileModule(ctx, fileName, code));
     if (!mod) {
         boilerplate::ReportAndClearException(ctx);
         return false;
     }
 
-    if (!JS::ModuleInstantiate(ctx, mod)) { 
+    
+    if (!JS::ModuleInstantiate(ctx, mod)) {
         boilerplate::ReportAndClearException(ctx);
         return false;
     }
 
     JS::RootedValue rval(ctx);
-    
     if (!JS::ModuleEvaluate(ctx, mod, &rval)) {
         boilerplate::ReportAndClearException(ctx);
         return false;
     }
-
     return true;
 }
 
@@ -77,6 +80,7 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
     JSAutoRealm ar(ctx, global);
 
     JS::SetModuleResolveHook(JS_GetRuntime(ctx), resolveHook);
+    JS::SetModuleMetadataHook(JS_GetRuntime(ctx), metadataHook);
     JS::RootedObject privateMod(ctx, JS_NewPlainObject(ctx));
     JS::RootedValue v(ctx);
 
@@ -87,15 +91,13 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
 
     JS_SetProperty(ctx, global, "__PRIVATE_CUZ_FF_STUPID", v);
 
-    std::string code = "import \"";
-    code += fileName;
-    code += "\"";
+    std::string code = Senkora::readFile(fileName);
+    if (code.length() == 0) return false;
     std::string path = fs::path(fs::absolute(fileName)).parent_path();
     return executeCode(ctx, code.c_str(), fileName);
 }
 
 int main(int argc, const char* argv[]) {
-    dirs.push(fs::current_path());
     if (!boilerplate::Run(run, true, argc, argv)) {
         return 1;
     }
