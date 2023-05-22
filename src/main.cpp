@@ -44,17 +44,6 @@ static bool executeCode(JSContext *ctx, const char* code, const char* fileName) 
         return false;
     }
 
-    
-    if (!JS::ModuleInstantiate(ctx, mod)) {
-        boilerplate::ReportAndClearException(ctx);
-        return false;
-    }
-
-    JS::RootedValue rval(ctx);
-    if (!JS::ModuleEvaluate(ctx, mod, &rval)) {
-        boilerplate::ReportAndClearException(ctx);
-        return false;
-    }
     return true;
 }
 
@@ -91,10 +80,11 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
 
     JS_SetProperty(ctx, global, "__PRIVATE_CUZ_FF_STUPID", v);
 
-    std::string code = Senkora::readFile(fileName);
+    std::string currentPath = fs::current_path();
+    std::string filePath = fs::path(currentPath + "/" + fileName).lexically_normal();
+    std::string code = Senkora::readFile(filePath);
     if (code.length() == 0) return false;
-    std::string path = fs::path(fs::absolute(fileName)).parent_path();
-    return executeCode(ctx, code.c_str(), fileName);
+    return executeCode(ctx, code.c_str(), filePath.c_str());
 }
 
 int main(int argc, const char* argv[]) {

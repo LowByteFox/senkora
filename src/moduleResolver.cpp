@@ -50,15 +50,23 @@ JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleO
 
     std::u16string name(specChars.get());
     std::string converted = To_UTF8(name);
+    JS::RootedObject obj(ctx, &modulePrivate.toObject());
 
-    auto search = moduleRegistry.find(converted);
+    JS::RootedValue val(ctx);
+    JS_GetProperty(ctx, obj, "url", &val);
+    std::string str = Senkora::jsToString2(ctx, val.toString());
+    std::string base = fs::path(str).parent_path();
+    base += "/" + converted;
+    base = fs::path(base).lexically_normal();
+
+    auto search = moduleRegistry.find(base);
     if (search != moduleRegistry.end()) return search->second;
 
-    std::string code = Senkora::readFile(converted);
+    std::string code = Senkora::readFile(base);
     JS::RootedObject mod(ctx);
-    mod = Senkora::CompileModule(ctx, converted.c_str(), code.c_str());
+    mod = Senkora::CompileModule(ctx, base.c_str(), code.c_str());
     if (!mod) return nullptr;
 
-    moduleRegistry.emplace(converted, JS::PersistentRootedObject(ctx, mod));
+    moduleRegistry.emplace(base, JS::PersistentRootedObject(ctx, mod));
     return mod;
 }

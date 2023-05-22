@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <filesystem>
+#include <js/CharacterEncoding.h>
 #include <js/CompilationAndEvaluation.h>
 #include <js/CompileOptions.h>
 #include <js/Modules.h>
@@ -8,10 +10,14 @@
 #include <js/SourceText.h>
 #include <js/String.h>
 #include <js/TypeDecls.h>
+#include <js/Utility.h>
 #include <jsapi.h>
 #include <mozilla/Utf8.h>
 
 #include "Senkora.hpp"
+#include "../boilerplate.hpp"
+
+namespace fs = std::filesystem;
 
 namespace Senkora {
     JSScript *CompileScript(JSContext *ctx, const char *fileName, const char *code) {
@@ -26,7 +32,8 @@ namespace Senkora {
 
     JSObject *CompileModule(JSContext *ctx, const char *fileName, const char *code) {
         JS::CompileOptions options(ctx);
-        options.setFileAndLine(fileName, 1);
+        std::string name = fs::path(fileName).filename();
+        options.setFileAndLine(name.c_str(), 1);
 
         JS::SourceText<mozilla::Utf8Unit> source;
         if (!source.init(ctx, code, strlen(code), JS::SourceOwnership::Borrowed)) return nullptr;
@@ -41,6 +48,17 @@ namespace Senkora {
         JS_SetProperty(ctx, meta, "url", nig);
         mod2.setObject(*meta.get());
         JS::SetModulePrivate(mod, mod2);
+
+        if (!JS::ModuleInstantiate(ctx, mod)) {
+            boilerplate::ReportAndClearException(ctx);
+            return nullptr;
+        }
+
+        JS::RootedValue rval(ctx);
+        if (!JS::ModuleEvaluate(ctx, mod, &rval)) {
+            boilerplate::ReportAndClearException(ctx);
+            return nullptr;
+        }
 
         return mod;
     }
@@ -58,5 +76,15 @@ namespace Senkora {
         file.close();
 
         return out;
+    }
+
+    std::string jsToString(JSContext *ctx, JS::HandleString str) {
+        JS::UniqueChars bytes(JS_EncodeStringToUTF8(ctx, str));
+        return bytes.get();
+    }
+
+    std::string jsToString2(JSContext *ctx, JSString *str) {
+        JS::HandleString newStr = JS::HandleString::fromMarkedLocation(&str);
+        return jsToString(ctx, newStr);
     }
 }
