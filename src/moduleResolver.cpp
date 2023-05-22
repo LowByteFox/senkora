@@ -54,7 +54,7 @@ JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleO
 
     JS::RootedValue val(ctx);
     JS_GetProperty(ctx, obj, "url", &val);
-    std::string str = Senkora::jsToString2(ctx, val.toString());
+    std::string str = Senkora::jsToString(ctx, val.toString());
     std::string base = fs::path(str).parent_path();
     base += "/" + converted;
     base = fs::path(base).lexically_normal();

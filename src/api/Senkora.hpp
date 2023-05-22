@@ -10,7 +10,7 @@ namespace Senkora {
     JSObject *CompileModule(JSContext *ctx, const char *fileName, const char *code);
     std::string readFile(std::string name);
     std::string jsToString(JSContext *ctx, JS::HandleString str);
-    std::string jsToString2(JSContext *ctx, JSString *str);
+    std::string jsToString(JSContext *ctx, JSString *str);
 }
 
 #endif

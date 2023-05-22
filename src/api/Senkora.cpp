@@ -83,7 +83,7 @@ namespace Senkora {
         return bytes.get();
     }
 
-    std::string jsToString2(JSContext *ctx, JSString *str) {
+    std::string jsToString(JSContext *ctx, JSString *str) {
         JS::HandleString newStr = JS::HandleString::fromMarkedLocation(&str);
         return jsToString(ctx, newStr);
     }
