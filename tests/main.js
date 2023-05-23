@@ -1,9 +1,13 @@
 import "./data.js";
 
-__PRIVATE_CUZ_FF_STUPID.print(5);
-__PRIVATE_CUZ_FF_STUPID.print(7.8);
-__PRIVATE_CUZ_FF_STUPID.print(null);
-__PRIVATE_CUZ_FF_STUPID.print(undefined);
+const console = {
+    log: __PRIVATE_CUZ_FF_STUPID.print
+};
+
+console.log(5);
+console.log(7.8);
+console.log(null);
+console.log(undefined);
 
 
 function ahoj() {
@@ -16,9 +20,9 @@ class Xd {
     }
 }
 
-__PRIVATE_CUZ_FF_STUPID.print(ahoj)
+console.log(ahoj)
 
-__PRIVATE_CUZ_FF_STUPID.print({
+console.log({
     bun: "Epic",
     node: "Old",
     deno: "Ruined",
@@ -37,9 +41,9 @@ __PRIVATE_CUZ_FF_STUPID.print({
     ahoj2: "cau"
 });
 
-__PRIVATE_CUZ_FF_STUPID.print(Xd);
+console.log(Xd);
 
 const { url } = import.meta;
 
-__PRIVATE_CUZ_FF_STUPID.print(import.meta);
-__PRIVATE_CUZ_FF_STUPID.print(url);
+console.log(import.meta);
+console.log(url);
