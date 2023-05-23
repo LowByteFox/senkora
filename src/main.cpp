@@ -4,11 +4,13 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include <js/CallAndConstruct.h>
 #include <js/CharacterEncoding.h>
 #include <js/Class.h>
 #include <js/CompileOptions.h>
 #include <js/Context.h>
 #include <js/GCVector.h>
+#include <js/GlobalObject.h>
 #include <js/Id.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
@@ -17,6 +19,7 @@
 #include <js/TypeDecls.h>
 #include <js/Utility.h>
 #include <js/Value.h>
+#include <js/ValueArray.h>
 #include <jsapi.h>
 #include <jsfriendapi.h>
 #include <js/CompilationAndEvaluation.h>
@@ -69,9 +72,13 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
             printf("%s\n", str.c_str());
     } else if (val.isNumber()) {
         if (depth) {
-            printf("%f", val.toNumber());
-        } else
-            printf("%f\n", val.toNumber());
+            if (val.isDouble()) {
+                printf("%f", val.toNumber());
+            } else printf("%d", val.toInt32());
+        } else {
+            if (val.isDouble()) printf("%f\n", val.toNumber());
+            else printf("%d\n", val.toInt32());
+        }
     } else if (val.isBoolean()) {
         if (depth) {
             printf("%s", val.toBoolean() ? "true" : "false");
@@ -91,15 +98,39 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
             JS_GetProperty(ctx, ob, "name", val);
 
             std::string name = Senkora::jsToString(ctx, val.toString());
+            std::string type = "Function";
 
             if (!name.length()) {
                 name = "anonymous";
             }
 
+            JS::MutableHandleValue val2 = Senkora::toMutableHandle(&v);
+            JS_GetProperty(ctx, ob, "constructor", val2);
+            JSObject *construct = &val2.toObject();
+            JS::HandleObject constructor = Senkora::toHandle(&construct);
+
+            JS::MutableHandleValue val3 = Senkora::toMutableHandle(&v);
+            JS_GetProperty(ctx, constructor, "toString", val3);
+            JSObject *funcObj = &val3.toObject();
+            if (js::IsFunctionObject(funcObj)) {
+                JSFunction *func = JS_GetObjectFunction(funcObj);
+                JS::HandleFunction funcHandle = Senkora::toHandle(&func);
+
+                JS::Value rval = JS::Value();
+                JS::MutableHandleValue rval2 = Senkora::toMutableHandle(&rval);
+                JS_CallFunction(ctx, ob, funcHandle, JS::HandleValueArray::empty(), rval2);
+                if (rval2.isString()) {
+                    std::string code = Senkora::jsToString(ctx, rval2.toString());
+                    if (!code.rfind("class", 0)) {
+                        type = "Class";
+                    }
+                }
+            }
+
             if (depth) {
-                printf("(Function: %s)", name.c_str());
+                printf("(%s: %s)", type.c_str(), name.c_str());
             } else
-                printf("(Function: %s)\n", name.c_str());
+                printf("(%s: %s)\n", type.c_str(), name.c_str());
         } else {
             JS::StackGCVector<JS::PropertyKey> idOfProps(ctx);
             JS::MutableHandleIdVector props = Senkora::toMutableHandle(&idOfProps);
@@ -123,6 +154,7 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
                 printFunc(ctx, val, depth);
                 printf(",\n");
             }
+
             auto lastProp = props[props.length() - 1].get();
             for (int j = 0; j < depth; j++) {
                 printf(" ");
@@ -135,7 +167,7 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
 
             JS_GetPropertyById(ctx, ob, key, val);
             printFunc(ctx, val, depth);
-            if (!val.isObject())
+            if (!val.isObject() || js::IsFunctionObject(&val.toObject()))
                 printf("\n");
             depth -= 2;
             for (int i = 0; i < depth; i++) printf(" ");

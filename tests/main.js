@@ -1,4 +1,6 @@
-__PRIVATE_CUZ_FF_STUPID.print(7);
+import "./data.js";
+
+__PRIVATE_CUZ_FF_STUPID.print(5);
 __PRIVATE_CUZ_FF_STUPID.print(7.8);
 __PRIVATE_CUZ_FF_STUPID.print(null);
 __PRIVATE_CUZ_FF_STUPID.print(undefined);
@@ -27,8 +29,11 @@ __PRIVATE_CUZ_FF_STUPID.print({
         hodnota: 5,
         dalsieCislo: 7.8,
         nic: null,
-        neznam :undefined
+        neznam :undefined,
+        trieda: {
+            Xd: Xd
+        }
     }
 });
 
-__PRIVATE_CUZ_FF_STUPID.print(new Xd());
+__PRIVATE_CUZ_FF_STUPID.print(Xd);
