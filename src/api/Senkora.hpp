@@ -12,6 +12,7 @@ namespace Senkora {
     std::string readFile(std::string name);
     std::string jsToString(JSContext *ctx, JS::HandleString str);
     std::string jsToString(JSContext *ctx, JSString *str);
+    JSString *stringToJS(JSContext *ctx, const char *str);
 
     // C++ bruh
     template<typename T>
@@ -22,6 +23,12 @@ namespace Senkora {
     template<typename T>
     JS::MutableHandle<T> toMutableHandle(T *base) {
         return JS::MutableHandle<T>::fromMarkedLocation(base);
+    }
+
+
+    template<typename T>
+    JS::Rooted<T> toRooted(JSContext *ctx, T base) {
+        return JS::Rooted<T>(ctx, base);
     }
 }
 

@@ -52,44 +52,90 @@ static bool executeCode(JSContext *ctx, const char* code, const char* fileName) 
     return true;
 }
 
+const char* printNullOrUndefined(JS::HandleValue val) {
+    if (val.isUndefined()) {
+        return "undefined";
+    }
 
-void printObject(JSContext* cx, JSObject *obj) {
-    JS::StackGCVector<JS::PropertyKey> idprops(cx);
-    JS::MutableHandleIdVector props = Senkora::toMutableHandle(&idprops);
-    JS::HandleObject ob = Senkora::toHandle(&obj);
+    return "null";
+}
 
-    js::GetPropertyKeys(cx, ob, JSITER_SYMBOLS, props);
+void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
+    if (val.isString()) {
+        std::string str = Senkora::jsToString(ctx, val.toString());
+        if (depth) {
+            printf("\"%s\"", str.c_str());
+        } else
+            printf("%s\n", str.c_str());
+    } else if (val.isNumber()) {
+        if (depth) {
+            printf("%f", val.toNumber());
+        } else
+            printf("%f\n", val.toNumber());
+    } else if (val.isBoolean()) {
+        if (depth) {
+            printf("%s", val.toBoolean() ? "true" : "false");
+        } else
+            printf("%s\n", val.toBoolean() ? "true" : "false");
+    } else if (val.isNullOrUndefined()) {
+        if (depth) {
+            printf("%s", printNullOrUndefined(val));
+        } else 
+            printf("%s\n", printNullOrUndefined(val));
+    } else if (val.isObject()) {
+        JSObject *obj = &val.toObject();
+        JS::HandleObject ob = Senkora::toHandle(&obj);
+        if (js::IsFunctionObject(obj)) {
+            JS::Value v = JS::Value();
+            JS::MutableHandleValue val = Senkora::toMutableHandle(&v);
+            JS_GetProperty(ctx, ob, "name", val);
 
-    for (auto key : props) {
-        JS::Value t = JS::Value();
-        JS::Handle<JS::PropertyKey> k = Senkora::toHandle(&key);
-        JS::MutableHandleValue val = Senkora::toMutableHandle(&t);
-        JS_GetPropertyById(cx, ob, k, val);
-        if (val.isString()) {
-            printf("%s: %s\n", Senkora::jsToString(cx, key.toString()).c_str(), Senkora::jsToString(cx, val.toString()).c_str());
+            std::string name = Senkora::jsToString(ctx, val.toString());
+
+            if (!name.length()) {
+                name = "anonymous";
+            }
+
+            if (depth) {
+                printf("(Function: %s)", name.c_str());
+            } else
+                printf("(Function: %s)\n", name.c_str());
+        } else {
+            JS::StackGCVector<JS::PropertyKey> idOfProps(ctx);
+            JS::MutableHandleIdVector props = Senkora::toMutableHandle(&idOfProps);
+            
+            js::GetPropertyKeys(ctx, ob, JSITER_SYMBOLS, props);
+            depth += 2;
+            printf("{\n");
+            for (auto prop : props) {
+                for (int i = 0; i < depth; i++) {
+                    printf(" ");
+                }
+
+                printf("%s: ", Senkora::jsToString(ctx, prop.toString()).c_str());
+                JS::Value v = JS::Value();
+                JS::Handle<JS::PropertyKey> key = Senkora::toHandle(&prop);
+                JS::MutableHandleValue val = Senkora::toMutableHandle(&v);
+
+                JS_GetPropertyById(ctx, ob, key, val);
+                printFunc(ctx, val, depth);
+                printf(",\n");
+            }
+            depth -= 2;
+            for (int i = 0; i < depth; i++) printf(" ");
+            printf("}\n");
         }
     }
 }
 
 static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
-  JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
-  JS::HandleValue val = args.get(0);
-  if (val.isString()) {
-      JS::RootedString str(ctx, val.toString());
-      JS::UniqueChars chars(JS_EncodeStringToUTF8(ctx, str));
-      std::cout << chars.get() << std::endl;
-  } else if (val.isNumber()) {
-      std::cout << val.toNumber() << std::endl;
-  } else if (val.isBoolean()) {
-      std::cout << val.toBoolean() << std::endl;
-  } else if (val.isNullOrUndefined()) {
-      if (val.isNull()) std::cout << "null" << std::endl;
-      else std::cout << "undefined" << std::endl;
-  } else if (val.isObject()) {
-      printObject(ctx, &val.toObject());
-  }
-  args.rval().setNull();
-  return true;
+    JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+    JS::HandleValue val = args.get(0);
+
+    printFunc(ctx, val);
+
+    args.rval().setNull();
+    return true;
 }
 
 static bool run(JSContext *ctx, int argc, const char **argv) {
