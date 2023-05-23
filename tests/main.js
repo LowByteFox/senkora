@@ -8,6 +8,12 @@ function ahoj() {
     return 5;
 }
 
+class Xd {
+    constructor() {
+        this.hello = "ano";
+    }
+}
+
 __PRIVATE_CUZ_FF_STUPID.print(ahoj)
 
 __PRIVATE_CUZ_FF_STUPID.print({
@@ -24,3 +30,5 @@ __PRIVATE_CUZ_FF_STUPID.print({
         neznam :undefined
     }
 });
+
+__PRIVATE_CUZ_FF_STUPID.print(new Xd());

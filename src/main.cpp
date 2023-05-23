@@ -107,8 +107,10 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
             js::GetPropertyKeys(ctx, ob, JSITER_SYMBOLS, props);
             depth += 2;
             printf("{\n");
-            for (auto prop : props) {
-                for (int i = 0; i < depth; i++) {
+            for (int i = 0; i < props.length() - 1; i++) {
+                auto prop = props[i].get();
+
+                for (int j = 0; j < depth; j++) {
                     printf(" ");
                 }
 
@@ -121,6 +123,20 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
                 printFunc(ctx, val, depth);
                 printf(",\n");
             }
+            auto lastProp = props[props.length() - 1].get();
+            for (int j = 0; j < depth; j++) {
+                printf(" ");
+            }
+
+            printf("%s: ", Senkora::jsToString(ctx, lastProp.toString()).c_str());
+            JS::Value v = JS::Value();
+            JS::Handle<JS::PropertyKey> key = Senkora::toHandle(&lastProp);
+            JS::MutableHandleValue val = Senkora::toMutableHandle(&v);
+
+            JS_GetPropertyById(ctx, ob, key, val);
+            printFunc(ctx, val, depth);
+            if (!val.isObject())
+                printf("\n");
             depth -= 2;
             for (int i = 0; i < depth; i++) printf(" ");
             printf("}\n");
