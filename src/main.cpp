@@ -8,6 +8,8 @@
 #include <js/Class.h>
 #include <js/CompileOptions.h>
 #include <js/Context.h>
+#include <js/GCVector.h>
+#include <js/Id.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
 #include <js/RootingAPI.h>
@@ -51,11 +53,21 @@ static bool executeCode(JSContext *ctx, const char* code, const char* fileName) 
 }
 
 void PrintNonPrivateProperties(JSContext* cx, JSObject *obj) {
-    JS::IdVector idprops(cx);
-    JS::MutableHandleIdVector props = idprops;
-    JS::HandleObject ob(obj);
+    JS::StackGCVector<JS::PropertyKey> idprops(cx);
+    JS::MutableHandleIdVector props = JS::MutableHandleIdVector::fromMarkedLocation(&idprops);
+    JS::HandleObject ob = JS::HandleObject::fromMarkedLocation(&obj);
 
-    js::GetPropertyKeys(cx, ob, JSITER_SYMBOLS, &idprops);
+    js::GetPropertyKeys(cx, ob, JSITER_SYMBOLS, props);
+
+    for (auto key : props) {
+        JS::Value t = JS::Value();
+        JS::Handle<JS::PropertyKey> k = JS::Handle<JS::PropertyKey>::fromMarkedLocation(&key);
+        JS::MutableHandleValue val = JS::MutableHandleValue::fromMarkedLocation(&t);
+        JS_GetPropertyById(cx, ob, k, val);
+        if (val.isString()) {
+            printf("%s: %s\n", Senkora::jsToString(cx, key.toString()).c_str(), Senkora::jsToString(cx, val.toString()).c_str());
+        }
+    }
 }
 
 static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
