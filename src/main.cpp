@@ -52,17 +52,18 @@ static bool executeCode(JSContext *ctx, const char* code, const char* fileName) 
     return true;
 }
 
-void PrintNonPrivateProperties(JSContext* cx, JSObject *obj) {
+
+void printObject(JSContext* cx, JSObject *obj) {
     JS::StackGCVector<JS::PropertyKey> idprops(cx);
-    JS::MutableHandleIdVector props = JS::MutableHandleIdVector::fromMarkedLocation(&idprops);
-    JS::HandleObject ob = JS::HandleObject::fromMarkedLocation(&obj);
+    JS::MutableHandleIdVector props = Senkora::toMutableHandle(&idprops);
+    JS::HandleObject ob = Senkora::toHandle(&obj);
 
     js::GetPropertyKeys(cx, ob, JSITER_SYMBOLS, props);
 
     for (auto key : props) {
         JS::Value t = JS::Value();
-        JS::Handle<JS::PropertyKey> k = JS::Handle<JS::PropertyKey>::fromMarkedLocation(&key);
-        JS::MutableHandleValue val = JS::MutableHandleValue::fromMarkedLocation(&t);
+        JS::Handle<JS::PropertyKey> k = Senkora::toHandle(&key);
+        JS::MutableHandleValue val = Senkora::toMutableHandle(&t);
         JS_GetPropertyById(cx, ob, k, val);
         if (val.isString()) {
             printf("%s: %s\n", Senkora::jsToString(cx, key.toString()).c_str(), Senkora::jsToString(cx, val.toString()).c_str());
@@ -85,7 +86,7 @@ static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
       if (val.isNull()) std::cout << "null" << std::endl;
       else std::cout << "undefined" << std::endl;
   } else if (val.isObject()) {
-      PrintNonPrivateProperties(ctx, &val.toObject());
+      printObject(ctx, &val.toObject());
   }
   args.rval().setNull();
   return true;
