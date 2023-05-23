@@ -84,7 +84,7 @@ namespace Senkora {
     }
 
     std::string jsToString(JSContext *ctx, JSString *str) {
-        JS::HandleString newStr = JS::HandleString::fromMarkedLocation(&str);
+        JS::HandleString newStr = Senkora::toHandle(&str);
         return jsToString(ctx, newStr);
     }
 

@@ -1,5 +1,6 @@
 #include "moduleResolver.hpp"
 #include "Senkora.hpp"
+#include "boilerplate.hpp"
 
 #include <codecvt>
 #include <cstdio>
@@ -7,12 +8,17 @@
 #include <iostream>
 #include <js/CharacterEncoding.h>
 #include <js/Context.h>
+#include <js/GCVector.h>
+#include <js/Id.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
+#include <js/PropertyDescriptor.h>
 #include <js/String.h>
 #include <js/TypeDecls.h>
 #include <js/Utility.h>
+#include <js/Value.h>
 #include <jsapi.h>
+#include <jsfriendapi.h>
 #include <locale>
 #include <stack>
 
@@ -34,6 +40,33 @@ std::string To_UTF8(const std::u16string &s)
 }
 
 bool metadataHook(JSContext* ctx, JS::HandleValue private_ref, JS::HandleObject meta) {
+    JS::StackGCVector<JS::PropertyKey> ids(ctx);
+    JS::MutableHandleIdVector props = Senkora::toMutableHandle(&ids);
+    JSObject *obj = &private_ref.toObject();
+    JS::HandleObject ob = Senkora::toHandle(&obj);
+ 
+    if(!js::GetPropertyKeys(ctx, ob, JSITER_SYMBOLS, props)) {
+        boilerplate::ReportAndClearException(ctx);
+        return false;
+    }
+
+    for (auto prop : props) {
+        JS::Value v = JS::Value();
+        JS::Handle<JS::PropertyKey> key = Senkora::toHandle(&prop);
+        JS::MutableHandleValue val = Senkora::toMutableHandle(&v);
+
+        if (!JS_GetPropertyById(ctx, ob, key, val)) {
+            boilerplate::ReportAndClearException(ctx);
+            return false;
+        }
+
+        JS::HandleValue val2 = Senkora::toHandle(&val.get());
+        if (!JS_SetPropertyById(ctx, meta, key, val2)) {
+            boilerplate::ReportAndClearException(ctx);
+            return false;
+        }
+    }
+
     return true;
 }
 

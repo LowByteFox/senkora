@@ -33,7 +33,13 @@ __PRIVATE_CUZ_FF_STUPID.print({
         trieda: {
             Xd: Xd
         }
-    }
+    },
+    ahoj2: "cau"
 });
 
 __PRIVATE_CUZ_FF_STUPID.print(Xd);
+
+const { url } = import.meta;
+
+__PRIVATE_CUZ_FF_STUPID.print(import.meta);
+__PRIVATE_CUZ_FF_STUPID.print(url);

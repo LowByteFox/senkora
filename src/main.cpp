@@ -63,7 +63,7 @@ const char* printNullOrUndefined(JS::HandleValue val) {
     return "null";
 }
 
-void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
+void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0, bool isNext = false) {
     if (val.isString()) {
         std::string str = Senkora::jsToString(ctx, val.toString());
         if (depth) {
@@ -120,6 +120,7 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
                 JS::MutableHandleValue rval2 = Senkora::toMutableHandle(&rval);
                 JS_CallFunction(ctx, ob, funcHandle, JS::HandleValueArray::empty(), rval2);
                 if (rval2.isString()) {
+
                     std::string code = Senkora::jsToString(ctx, rval2.toString());
                     if (!code.rfind("class", 0)) {
                         type = "Class";
@@ -135,7 +136,10 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
             JS::StackGCVector<JS::PropertyKey> idOfProps(ctx);
             JS::MutableHandleIdVector props = Senkora::toMutableHandle(&idOfProps);
             
-            js::GetPropertyKeys(ctx, ob, JSITER_SYMBOLS, props);
+            if(!js::GetPropertyKeys(ctx, ob, JSITER_SYMBOLS, props)) {
+                boilerplate::ReportAndClearException(ctx);
+                return;
+            }
             depth += 2;
             printf("{\n");
             for (int i = 0; i < props.length() - 1; i++) {
@@ -150,8 +154,11 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
                 JS::Handle<JS::PropertyKey> key = Senkora::toHandle(&prop);
                 JS::MutableHandleValue val = Senkora::toMutableHandle(&v);
 
-                JS_GetPropertyById(ctx, ob, key, val);
-                printFunc(ctx, val, depth);
+                if(!JS_GetPropertyById(ctx, ob, key, val)) {
+                    boilerplate::ReportAndClearException(ctx);
+                    return;
+                };
+                printFunc(ctx, val, depth, true);
                 printf(",\n");
             }
 
@@ -165,13 +172,17 @@ void printFunc(JSContext *ctx, JS::HandleValue val, int depth = 0) {
             JS::Handle<JS::PropertyKey> key = Senkora::toHandle(&lastProp);
             JS::MutableHandleValue val = Senkora::toMutableHandle(&v);
 
-            JS_GetPropertyById(ctx, ob, key, val);
+            if(!JS_GetPropertyById(ctx, ob, key, val)) {
+                boilerplate::ReportAndClearException(ctx);
+                return;
+            }
             printFunc(ctx, val, depth);
             if (!val.isObject() || js::IsFunctionObject(&val.toObject()))
                 printf("\n");
             depth -= 2;
             for (int i = 0; i < depth; i++) printf(" ");
-            printf("}\n");
+            printf("}");
+            if (!isNext) printf("\n");
         }
     }
 }
