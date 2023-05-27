@@ -20,7 +20,11 @@ class Xd {
     }
 }
 
-console.log(ahoj)
+console.log(ahoj);
+
+throw "gone"
+
+JSON.parse("{'Ahoj': 4}");
 
 console.log({
     bun: "Epic",
@@ -48,4 +52,3 @@ const { url } = import.meta;
 console.log(import.meta);
 console.log(url);
 
-JSON.parse("{'Ahoj': 4}");

@@ -221,6 +221,13 @@ static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
 
 class ErrorHandler : public JSErrorInterceptor {
     void interceptError(JSContext* ctx, JS::HandleValue error) {
+        if (error.isString()) {
+            std::string msg = Senkora::jsToString(ctx, error.toString());
+            printf("%s\n", msg.c_str());
+            JS_DestroyContext(ctx);
+            JS_ShutDown();
+            exit(1);
+        }
         JSObject *obj = &error.toObject();
         JS::HandleObject ob = Senkora::toHandle(&obj);
         JS::Value v = JS::Value();
