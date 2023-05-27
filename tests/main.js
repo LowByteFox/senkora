@@ -47,3 +47,5 @@ const { url } = import.meta;
 
 console.log(import.meta);
 console.log(url);
+
+JSON.parse("{'Ahoj': 4}");

@@ -1,5 +1,6 @@
 #include <cstdio>
 
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <fstream>
@@ -9,14 +10,19 @@
 #include <js/Class.h>
 #include <js/CompileOptions.h>
 #include <js/Context.h>
+#include <js/ErrorInterceptor.h>
+#include <js/ErrorReport.h>
+#include <js/Exception.h>
 #include <js/GCVector.h>
 #include <js/GlobalObject.h>
 #include <js/Id.h>
+#include <js/Initialization.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
 #include <js/RootingAPI.h>
 #include <js/String.h>
 #include <js/TypeDecls.h>
+#include <js/Warnings.h>
 #include <js/Utility.h>
 #include <js/Value.h>
 #include <js/ValueArray.h>
@@ -28,6 +34,7 @@
 #include <js/Object.h>
 #include <mozilla/Utf8.h>
 #include <Senkora.hpp>
+#include <mozjs-102/js/Context.h>
 #include <ostream>
 #include <stack>
 #include <string>
@@ -52,6 +59,21 @@ static bool executeCode(JSContext *ctx, const char* code, const char* fileName) 
         return false;
     }
 
+    if (!JS::ModuleLink(ctx, mod)) {
+        boilerplate::ReportAndClearException(ctx);
+        return false;
+    }
+
+    JS::RootedValue rval(ctx);
+    if (!JS::ModuleEvaluate(ctx, mod, &rval)) {
+        boilerplate::ReportAndClearException(ctx);
+        return false;
+    }
+    JS::RootedValue exception(ctx);
+    JS_ClearPendingException(ctx);
+    auto pending = JS_IsExceptionPending(ctx);
+    if (pending) {
+    }
     return true;
 }
 
@@ -197,15 +219,48 @@ static bool print(JSContext* ctx, unsigned argc, JS::Value* vp) {
     return true;
 }
 
+class ErrorHandler : public JSErrorInterceptor {
+    void interceptError(JSContext* ctx, JS::HandleValue error) {
+        JSObject *obj = &error.toObject();
+        JS::HandleObject ob = Senkora::toHandle(&obj);
+        JS::Value v = JS::Value();
+        JS::MutableHandleValue toStr = Senkora::toMutableHandle(&v);
+
+        JS_GetProperty(ctx, ob, "toString", toStr);
+
+        if(toStr.isObject()) {
+            JSFunction *f = JS_GetObjectFunction(&toStr.toObject());
+            JS::HandleFunction func = Senkora::toHandle(&f);
+
+            JS::Value r = JS::Value();
+            JS::MutableHandleValue rval = Senkora::toMutableHandle(&r);
+
+            JS_CallFunction(ctx, ob, func, JS::HandleValueArray::empty(), rval);
+
+            if (rval.isString()) {
+                std::string out = Senkora::jsToString(ctx, rval.toString());
+                printf("%s\n", out.c_str());
+                JS_DestroyContext(ctx);
+                JS_ShutDown();
+                exit(1);
+            }
+        }
+    }
+};
+
 static bool run(JSContext *ctx, int argc, const char **argv) {
     if (argc == 1) return false;
     const char *fileName = argv[1];
+
+    if (!js::UseInternalJobQueues(ctx)) return false;
+
+    if (!JS::InitSelfHostedCode(ctx)) return false;
 
     JS::RootedObject global(ctx, boilerplate::CreateGlobal(ctx));
     if (!global) return false;
 
     JSAutoRealm ar(ctx, global);
-
+    JS_SetErrorInterceptorCallback(JS_GetRuntime(ctx), new ErrorHandler());
     JS::SetModuleResolveHook(JS_GetRuntime(ctx), resolveHook);
     JS::SetModuleMetadataHook(JS_GetRuntime(ctx), metadataHook);
     JS::RootedObject privateMod(ctx, JS_NewPlainObject(ctx));
@@ -230,7 +285,7 @@ static bool run(JSContext *ctx, int argc, const char **argv) {
 }
 
 int main(int argc, const char* argv[]) {
-    if (!boilerplate::Run(run, true, argc, argv)) {
+    if (!boilerplate::Run(run, false, argc, argv)) {
         return 1;
     }
     return 0;

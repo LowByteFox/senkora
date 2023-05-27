@@ -60,6 +60,7 @@ bool boilerplate::Run(bool (*task)(JSContext* ctx, int argc, const char **argv),
     }
 
     if (!task(cx, argc, argv)) {
+        ReportAndClearException(cx);
         JS_DestroyContext(cx);
         JS_ShutDown();
         return false;

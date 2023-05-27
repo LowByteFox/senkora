@@ -5,12 +5,16 @@
 #include <js/CharacterEncoding.h>
 #include <js/CompilationAndEvaluation.h>
 #include <js/CompileOptions.h>
+#include <js/Conversions.h>
+#include <js/Exception.h>
+#include <js/GCAPI.h>
 #include <js/Modules.h>
 #include <js/PropertyAndElement.h>
 #include <js/SourceText.h>
 #include <js/String.h>
 #include <js/TypeDecls.h>
 #include <js/Utility.h>
+#include <js/Value.h>
 #include <jsapi.h>
 #include <mozilla/Utf8.h>
 
@@ -48,17 +52,6 @@ namespace Senkora {
         JS_SetProperty(ctx, meta, "url", nig);
         mod2.setObject(*meta.get());
         JS::SetModulePrivate(mod, mod2);
-
-        if (!JS::ModuleInstantiate(ctx, mod)) {
-            boilerplate::ReportAndClearException(ctx);
-            return nullptr;
-        }
-
-        JS::RootedValue rval(ctx);
-        if (!JS::ModuleEvaluate(ctx, mod, &rval)) {
-            boilerplate::ReportAndClearException(ctx);
-            return nullptr;
-        }
 
         return mod;
     }

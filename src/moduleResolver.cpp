@@ -72,6 +72,8 @@ bool metadataHook(JSContext* ctx, JS::HandleValue private_ref, JS::HandleObject 
 
 JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleObject moduleRequest) {
 
+    if (!modulePrivate.isObject()) return nullptr;
+
     JS::Rooted<JSString *> specifierString(
         ctx, JS::GetModuleRequestSpecifier(ctx, moduleRequest)
     );
@@ -100,9 +102,10 @@ JSObject *resolveHook(JSContext *ctx, JS::HandleValue modulePrivate, JS::HandleO
     if (search != moduleRegistry.end()) return search->second;
 
     std::string code = Senkora::readFile(base);
-    JS::RootedObject mod(ctx);
-    mod = Senkora::CompileModule(ctx, base.c_str(), code.c_str());
-    if (!mod) return nullptr;
+    JS::RootedObject mod(ctx, Senkora::CompileModule(ctx, base.c_str(), code.c_str()));
+    if (!mod) {
+        return nullptr;
+    }
 
     moduleRegistry.emplace(base, JS::PersistentRootedObject(ctx, mod));
     return mod;
