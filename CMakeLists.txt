@@ -10,6 +10,7 @@ pkg_check_modules(V8 IMPORTED_TARGET REQUIRED v8)
 FILE(GLOB SRC ./src/*.cpp ./src/api/*.cpp)
 
 link_directories(${V8_LIBRARY_DIRS})
+include_directories(./src/api/)
 
 add_executable(senkora ${SRC})
 add_compile_definitions(V8_COMPRESS_POINTERS)
