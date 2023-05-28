@@ -33,8 +33,9 @@ void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
     fflush(stdout);
 }
 
+static int lastScriptId = 1;
+
 int main(int argc, char* argv[]) {
-    // Initialize V8.
     v8::V8::InitializeICUDefaultLocation(argv[0]);
     v8::V8::InitializeExternalStartupData(argv[0]);
     std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
@@ -46,6 +47,7 @@ int main(int argc, char* argv[]) {
         v8::ArrayBuffer::Allocator::NewDefaultAllocator();
 
     v8::Isolate* isolate = v8::Isolate::New(create_params);
+
     {
         v8::Isolate::Scope isolate_scope(isolate);
         v8::HandleScope handle_scope(isolate);
@@ -55,15 +57,12 @@ int main(int argc, char* argv[]) {
         v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
         v8::Context::Scope context_scope(ctx);
 
-        v8::MaybeLocal<v8::Module> mod = Senkora::compileScript(ctx, "print('Ahoj');");
-        v8::Local<v8::Module> mod2;
-        if (!mod.ToLocal(&mod2)) {
-            goto end;
-        }
-        v8::Maybe<bool> out = mod2->InstantiateModule(ctx, [](v8::Local<v8::Context> context, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> referrer) {
+        v8::Local<v8::Module> mod = Senkora::compileScript(ctx, "print(\"Hello, World\");").ToLocalChecked();
+
+        v8::Maybe<bool> out = mod->InstantiateModule(ctx, [](v8::Local<v8::Context> context, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> referrer) {
                 return v8::MaybeLocal<v8::Module>();
         });
-        v8::MaybeLocal<v8::Value> res = mod2->Evaluate(ctx);
+        v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
     }
 
 end:
