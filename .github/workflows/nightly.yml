@@ -4,7 +4,6 @@ on:
 jobs:
   compile:
     runs-on: ubuntu-latest
-    name: Prepare
     steps:
     - uses: actions/checkout@v2
     - uses: cachix/install-nix-action@v20
@@ -52,4 +51,4 @@ jobs:
           name: Nightly Build ${{ steps.vars.outputs.sha_short }}
           draft: false
           prerelease: false
-          files: senkora-linux.zip
+          files: senkora/senkora-linux.zip
