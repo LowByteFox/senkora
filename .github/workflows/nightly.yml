@@ -32,7 +32,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: senkora-linux
-          path: ./senkora-linux.zip
+  
+      - name: Display structure of downloaded files
+        run: ls -R
       
       - uses: dev-drprasad/delete-tag-and-release@085c6969f18bad0de1b9f3fe6692a3cd01f64fe5
         with:
