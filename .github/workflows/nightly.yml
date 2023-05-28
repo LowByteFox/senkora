@@ -18,7 +18,7 @@ jobs:
       run: nix-shell --run "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 ./dist/senkora"
 
     - name: Strip
-      run: strip --strip-unneeded ./dist/senkora -o ./dist/senkora-slim
+      run: strip --strip-unneeded ./dist/senkora -o ./dist/senkora-stripped
       
     - name: Upload unstripped
       uses: actions/upload-artifact@v3
@@ -29,8 +29,8 @@ jobs:
     - name: Upload stripped
       uses: actions/upload-artifact@v3
       with:
-        name: senkora-linux-slim
-        path: ./dist/senkora-slim
+        name: senkora-linux-stripped
+        path: ./dist/senkora-stripped
         
   Publish:
     runs-on: ubuntu-latest
@@ -69,4 +69,4 @@ jobs:
           prerelease: false
           files: |
             senkora
-            senkora-slim
+            senkora-stripped
