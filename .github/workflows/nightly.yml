@@ -1,5 +1,5 @@
 name: "Nightly Build"
-on:
+qon:
   push:
 jobs:
   Compile:
@@ -14,7 +14,7 @@ jobs:
     - name: Compile
       run: nix-shell --run "./make.sh"
     - name: Patch elf
-      run: nix-shell --run "patchelf ./dist/senkora"
+      run: nix-shell --run "patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 ./dist/senkora"
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
