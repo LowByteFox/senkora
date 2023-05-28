@@ -5,6 +5,7 @@ jobs:
   compile:
     runs-on: ubuntu-latest
     steps:
+    - name: Prepare
     - uses: actions/checkout@v2
     - uses: cachix/install-nix-action@v20
       with:
@@ -32,7 +33,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: senkora-linux
-          run: ls
+          path: ./senkora-linux.zip
       
       - uses: dev-drprasad/delete-tag-and-release@085c6969f18bad0de1b9f3fe6692a3cd01f64fe5
         with:
@@ -51,4 +52,4 @@ jobs:
           name: Nightly Build ${{ steps.vars.outputs.sha_short }}
           draft: false
           prerelease: false
-          files: senkora-linux
+          files: senkora-linux.zip
