@@ -13,6 +13,8 @@ jobs:
         
     - name: Compile
       run: nix-shell --run "./make.sh"
+    - name: Patch elf
+      run: nix-shell --run "patchelf ./dist/senkora"
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
