@@ -45,7 +45,7 @@ jobs:
         with:
           name: senkora-linux
 
-      - name: Download senkora-linux artifact
+      - name: Download senkora-linux-stripped artifact
         uses: actions/download-artifact@v3
         with:
           name: senkora-linux-stripped
