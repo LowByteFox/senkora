@@ -64,18 +64,4 @@ namespace Senkora
 
         return v8::ScriptCompiler::CompileModule(isolate, &source);
     }
-
-    v8::MaybeLocal<v8::Module> createModule(
-        v8::Local<v8::Context> ctx,
-        std::string module_name,
-        std::vector<v8::Local<v8::String>> export_names,
-        v8::Module::SyntheticModuleEvaluationSteps step
-    ) {
-        v8::Isolate *isolate = ctx->GetIsolate();
-
-        v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, module_name.c_str()).ToLocalChecked();
-        v8::Local<v8::Module> mod = v8::Module::CreateSyntheticModule(isolate, name, export_names, step);
-
-        return mod;
-    }
 }

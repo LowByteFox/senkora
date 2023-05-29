@@ -1,8 +1,7 @@
 #include <Senkora.hpp>
 
 #include "cli.hpp"
-#include "moduleResolver.hpp"
-#include "modules/dummy.hpp"
+#include "modules/modules.hpp"
 #include "v8-container.h"
 #include "v8-context.h"
 #include "v8-data.h"
@@ -81,21 +80,19 @@ void run(std::string nextArg, std::any data) {
     global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
     global->Set(isolate, "println", v8::FunctionTemplate::New(isolate, Println));
 
-    isolate->SetHostInitializeImportMetaObjectCallback(moduleResolution::metadataHook);
+    isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
 
     v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
     v8::Context::Scope context_scope(ctx);
+
+    Senkora::Modules::initBuiltinModules(isolate);
 
     std::string currentPath = fs::current_path();
     std::string filePath = nextArg;
     if (nextArg[0] != '/') {
         filePath = fs::path(currentPath + "/" + nextArg).lexically_normal();
     }
-
-    moduleCache["senkora:dummy"] = Senkora::createModule(ctx, 
-            "senkora:dummy",
-            dummy::getExports(isolate), dummy::init).ToLocalChecked();
-
+    
     std::string code = Senkora::readFile(filePath);
     Senkora::MetadataObject *meta = new Senkora::MetadataObject();
     v8::Local<v8::Value> url = v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked();
@@ -106,7 +103,7 @@ void run(std::string nextArg, std::any data) {
 
     moduleCache[filePath] = mod;
     moduleMetadatas[mod->ScriptId()] = meta;
-    v8::Maybe<bool> out = mod->InstantiateModule(ctx, moduleResolution::moduleResolver);
+    v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
 
     v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
 }
@@ -123,10 +120,12 @@ void eval(std::string nextArg, std::any data) {
     v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
     global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
 
-    isolate->SetHostInitializeImportMetaObjectCallback(moduleResolution::metadataHook);
+    isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
 
     v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
     v8::Context::Scope context_scope(ctx);
+
+    Senkora::Modules::initBuiltinModules(isolate);
 
     std::string currentPath = fs::current_path();
     currentPath += "/eval.js";
@@ -149,7 +148,7 @@ void eval(std::string nextArg, std::any data) {
 
     moduleCache[currentPath] = mod;
     moduleMetadatas[mod->ScriptId()] = meta;
-    v8::Maybe<bool> out = mod->InstantiateModule(ctx, moduleResolution::moduleResolver);
+    v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
 
     v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
 }

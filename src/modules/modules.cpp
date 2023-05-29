@@ -1,10 +1,8 @@
-#include "v8-context.h"
-#include "v8-local-handle.h"
-#include "v8-maybe.h"
-#include "v8-object.h"
-#include "v8-persistent-handle.h"
-#include "v8-primitive.h"
-#include "v8-script.h"
+#include "modules.hpp"
+#include "dummy.hpp"
+
+#include <map>
+#include <v8.h>
 #include <Senkora.hpp>
 #include <cstdio>
 #include <iostream>
@@ -12,18 +10,13 @@
 #include <vector>
 #include <filesystem>
 
-#include "moduleResolver.hpp"
-#include "v8-value.h"
-
 namespace fs = std::filesystem;
 
 extern std::map<int, Senkora::MetadataObject *> moduleMetadatas;
 extern std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
-namespace moduleResolution
-{
-    void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta)
-    {
+namespace Senkora::Modules {
+    void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta) {
         Senkora::MetadataObject *obj = moduleMetadatas[mod->ScriptId()];
         auto modMeta = obj->getMeta();
         for (auto it = modMeta.begin(); it != modMeta.end(); it++)
@@ -34,8 +27,7 @@ namespace moduleResolution
         }
     }
 
-    v8::MaybeLocal<v8::Module> moduleResolver(v8::Local<v8::Context> ctx, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> ref)
-    {
+    v8::MaybeLocal<v8::Module> moduleResolver(v8::Local<v8::Context> ctx, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> ref) {
         v8::String::Utf8Value val(ctx->GetIsolate(), specifier);
         std::string name(*val);
 
@@ -76,5 +68,28 @@ namespace moduleResolution
         moduleMetadatas[mod->ScriptId()] = meta;
 
         return mod;
+    }
+
+    v8::MaybeLocal<v8::Module> createModule(
+        v8::Local<v8::Context> ctx,
+        std::string module_name,
+        std::vector<v8::Local<v8::String>> export_names,
+        v8::Module::SyntheticModuleEvaluationSteps step
+    ) {
+        v8::Isolate *isolate = ctx->GetIsolate();
+
+        v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, module_name.c_str()).ToLocalChecked();
+        v8::Local<v8::Module> mod = v8::Module::CreateSyntheticModule(isolate, name, export_names, step);
+
+        return mod;
+    }
+
+    // INIT builtin modules here
+    void initBuiltinModules(v8::Isolate *isolate) {
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+
+        moduleCache["senkora:dummy"] = createModule(ctx, 
+            "senkora:dummy",
+            dummy::getExports(isolate), dummy::init).ToLocalChecked();
     }
 }
