@@ -2,9 +2,13 @@ import data from "./data.js";
 
 import data2 from "./newData.js";
 
-print("Hello file");
+println(data);
+println(data2);
 
-print(data.hello + data.world);
+println("ahoj %s test", "gula", "humus");
+println("Hello file");
 
-print(data2.AhojWorld)
-print(data2.HelloSvet)
+println(data.hello + data.world);
+
+println(data2.AhojWorld);
+println(data2.HelloSvet);

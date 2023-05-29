@@ -32,14 +32,8 @@ const char* ToCString(const v8::String::Utf8Value& value) {
 }
 
 void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    bool first = true;
     for (int i = 0; i < args.Length(); i++) {
         v8::HandleScope handle_scope(args.GetIsolate());
-        if (first) {
-            first = false;
-        } else {
-            printf(" ");
-        }
         v8::Local<v8::Value> val = args[i];
         if (!val->IsObject()) {
             v8::String::Utf8Value str(args.GetIsolate(), args[i]);
@@ -48,17 +42,23 @@ void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
         } else {
             v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
             v8::Local<v8::Object> obj = val->ToObject(ctx).ToLocalChecked();
-            v8::Local<v8::Array> names = obj->GetPropertyNames(ctx).ToLocalChecked();
-            for (int i = 0; i < names->Length(); i++) {
-                v8::Local<v8::Value> name = names->Get(ctx, i).ToLocalChecked();
-                if (name->IsString()) {
-                    v8::String::Utf8Value str(args.GetIsolate(), name);
-                    const char *cstr = ToCString(str);
-                    printf("%s\n", cstr);
-                }
-            }
+            v8::Isolate *isolate = args.GetIsolate();
+
+            v8::Local<v8::Value> output = v8::JSON::Stringify(ctx, obj, v8::String::NewFromUtf8(isolate, "  ").ToLocalChecked()).ToLocalChecked();
+            v8::String::Utf8Value str(args.GetIsolate(), output);
+
+            const char *cstr = ToCString(str);
+            printf("%s", cstr);
         }
+
+        if (args.Length() > i) printf(" ");
     }
+
+    fflush(stdout);
+}
+
+void Println(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    Print(args);
     printf("\n");
     fflush(stdout);
 }
@@ -78,6 +78,7 @@ void run(std::string nextArg, std::any data) {
     v8::HandleScope handle_scope(isolate);
     v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
     global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
+    global->Set(isolate, "println", v8::FunctionTemplate::New(isolate, Println));
 
     isolate->SetHostInitializeImportMetaObjectCallback(moduleResolution::metadataHook);
 
