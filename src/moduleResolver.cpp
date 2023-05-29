@@ -17,20 +17,25 @@
 
 namespace fs = std::filesystem;
 
-extern std::map<int, Senkora::MetadataObject*> moduleMetadatas;
+extern std::map<int, Senkora::MetadataObject *> moduleMetadatas;
 extern std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
-namespace moduleResolution {
-    void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta) {
+namespace moduleResolution
+{
+    void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta)
+    {
         Senkora::MetadataObject *obj = moduleMetadatas[mod->ScriptId()];
         auto modMeta = obj->getMeta();
-        for (auto it = modMeta.begin(); it != modMeta.end(); it++) {
+        for (auto it = modMeta.begin(); it != modMeta.end(); it++)
+        {
             v8::Maybe<bool> out = meta->CreateDataProperty(ctx, it->second.key, it->second.value);
-            if (!out.ToChecked()) return;
+            if (!out.ToChecked())
+                return;
         }
     }
 
-    v8::MaybeLocal<v8::Module> moduleResolver(v8::Local<v8::Context> ctx, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> ref) {
+    v8::MaybeLocal<v8::Module> moduleResolver(v8::Local<v8::Context> ctx, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> ref)
+    {
         v8::String::Utf8Value val(ctx->GetIsolate(), specifier);
         std::string name(*val);
 
@@ -40,13 +45,21 @@ namespace moduleResolution {
 
         std::string base = name;
 
-        if (base.c_str()[0] != '/') {
+        if (!base.compare(0, 8, "senkora:"))
+        {
+            v8::Local<v8::String> test_export = v8::String::NewFromUtf8(ctx->GetIsolate(), "test").ToLocalChecked();
+            return Senkora::createModule(ctx, name, {test_export});
+        }
+
+        if (base.c_str()[0] != '/')
+        {
             base = fs::path(urlPath).parent_path();
             base += "/" + name;
             base = fs::path(base).lexically_normal();
         }
 
-        if (moduleCache.find(base) != moduleCache.end()) {
+        if (moduleCache.find(base) != moduleCache.end())
+        {
             return moduleCache[base];
         }
 

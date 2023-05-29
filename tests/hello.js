@@ -1,4 +1,7 @@
 import data from "./data.js";
+import { test } from "senkora:std";
+
+println(test);
 
 import data2 from "./newData.js";
 

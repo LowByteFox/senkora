@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 project(senkora VERSION 0.2 LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED true)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 
 find_package(PkgConfig REQUIRED)
