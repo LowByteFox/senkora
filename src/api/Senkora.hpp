@@ -22,9 +22,10 @@ namespace Senkora {
         public:
             void Set(v8::Local<v8::Context> ctx, std::string key, v8::Local<v8::Value> val);
             v8::Local<v8::Value> Get(std::string key);
-            std::map<std::string, Metadata>::iterator begin();
-            std::map<std::string, Metadata>::iterator end();
+            std::map<std::string, Metadata> getMeta();
     };
+
+    std::string readFile(std::string name);
     v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, std::string code);
 }
 
