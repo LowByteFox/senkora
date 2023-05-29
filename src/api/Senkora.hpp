@@ -1,7 +1,6 @@
 #ifndef SENKORA_API
 #define SENKORA_API
 
-#include "v8-isolate.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 #include <map>
