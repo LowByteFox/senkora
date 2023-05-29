@@ -68,7 +68,10 @@ std::map<int, Senkora::MetadataObject*> moduleMetadatas;
 std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
 void run(std::string nextArg, std::any data) {
-    if (nextArg.length() == 0) return;
+    if (nextArg.length() == 0) {
+        printf("Error: missing file\n");
+        return;
+    }
 
     v8::Isolate *isolate = std::any_cast<v8::Isolate*>(data);
     v8::Isolate::Scope isolate_scope(isolate);
@@ -102,8 +105,60 @@ void run(std::string nextArg, std::any data) {
     v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
 }
 
+void eval(std::string nextArg, std::any data) {
+    if (nextArg.length() == 0) {
+        printf("Error: string expression\n");
+        return;
+    }
+
+    v8::Isolate *isolate = std::any_cast<v8::Isolate*>(data);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
+    global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
+
+    isolate->SetHostInitializeImportMetaObjectCallback(moduleResolution::metadataHook);
+
+    v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
+    v8::Context::Scope context_scope(ctx);
+
+    std::string currentPath = fs::current_path();
+    currentPath += "/eval.js";
+
+    std::string oldSubstring = "\\n";
+    std::string newSubstring = "\n";
+
+    size_t pos = nextArg.find(oldSubstring);
+    while (pos != std::string::npos) {
+        nextArg.replace(pos, oldSubstring.length(), newSubstring);
+        pos = nextArg.find(oldSubstring, pos + newSubstring.length());
+    }
+
+    Senkora::MetadataObject *meta = new Senkora::MetadataObject();
+    v8::Local<v8::Value> url = v8::String::NewFromUtf8(isolate, currentPath.c_str()).ToLocalChecked();
+
+    meta->Set(ctx, "url", url);
+
+    v8::Local<v8::Module> mod = Senkora::compileScript(ctx, nextArg).ToLocalChecked();
+
+    moduleCache[currentPath] = mod;
+    moduleMetadatas[mod->ScriptId()] = meta;
+    v8::Maybe<bool> out = mod->InstantiateModule(ctx, moduleResolution::moduleResolver);
+
+    v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
+}
+
 void ArgHandler::printHelp() {
-    printf("Cs\n");
+    printf(R"(Senkora - the JavaScript runtime for the modern age
+
+Usage: senkora [OPTIONS] [ARGS]
+
+OPTIONS:
+  help, -h,           Display this help message
+  version, -v         Display version
+  eval <EXPR>         Evaluate string expression, returned value will be printed to stdout
+  run <SCRIPT>        Execute <SCRIPT> file
+)");
 }
 
 int main(int argc, char* argv[]) {
@@ -121,6 +176,7 @@ int main(int argc, char* argv[]) {
 
     ArgHandler argHandler(argc, argv);
     argHandler.onArg("run", run, isolate);
+    argHandler.onArg("eval", eval, isolate);
     argHandler.run();
 
     isolate->Dispose();

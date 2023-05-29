@@ -6,6 +6,11 @@ void ArgHandler::onArg(std::string arg, std::function<void(std::string data, std
 }
 
 void ArgHandler::run() {
+    if (this->argc == 1) {
+        this->printHelp();
+        return;
+    }
+
     for (int i = 1; i < this->argc; i++) {
         if (this->funcs.find(this->argv[i]) != this->funcs.end()) {
             if (i + 1 != this->argc) {
