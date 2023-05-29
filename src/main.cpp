@@ -1,7 +1,6 @@
 #include <Senkora.hpp>
 
 #include "cli.hpp"
-#include "module.hpp"
 #include "moduleResolver.hpp"
 #include "v8-container.h"
 #include "v8-context.h"
@@ -31,12 +30,6 @@ namespace fs = std::filesystem;
 const char* ToCString(const v8::String::Utf8Value& value) {
     return *value ? *value : "<string conversion failed>";
 }
-
-class TestMod: Senkora::Module {
-    public:
-        TestMod(): Senkora::Module() {
-        }
-};
 
 void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
     for (int i = 0; i < args.Length(); i++) {
