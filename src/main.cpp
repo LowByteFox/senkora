@@ -2,6 +2,7 @@
 
 #include "cli.hpp"
 #include "moduleResolver.hpp"
+#include "modules/dummy.hpp"
 #include "v8-container.h"
 #include "v8-context.h"
 #include "v8-data.h"
@@ -90,6 +91,10 @@ void run(std::string nextArg, std::any data) {
     if (nextArg[0] != '/') {
         filePath = fs::path(currentPath + "/" + nextArg).lexically_normal();
     }
+
+    moduleCache["senkora:dummy"] = Senkora::createModule(ctx, 
+            "senkora:dummy",
+            dummy::getExports(isolate), dummy::init).ToLocalChecked();
 
     std::string code = Senkora::readFile(filePath);
     Senkora::MetadataObject *meta = new Senkora::MetadataObject();

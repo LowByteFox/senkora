@@ -3,14 +3,13 @@ project(senkora VERSION 0.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(V8 IMPORTED_TARGET REQUIRED v8)
 
-FILE(GLOB SRC ./src/*.cpp ./src/api/*.cpp)
+FILE(GLOB SRC ./src/*.cpp ./src/api/*.cpp ./src/modules/*)
 
 link_directories(${V8_LIBRARY_DIRS})
 include_directories(./src/api/)

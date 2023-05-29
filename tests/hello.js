@@ -1,7 +1,7 @@
 import data from "./data.js";
-import { test } from "senkora:std";
+import { hello } from "senkora:dummy";
 
-println(test);
+println(hello);
 
 import data2 from "./newData.js";
 

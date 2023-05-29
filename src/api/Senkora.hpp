@@ -31,7 +31,13 @@ namespace Senkora
 
     std::string readFile(std::string name);
     v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, std::string code);
-    v8::MaybeLocal<v8::Module> createModule(v8::Local<v8::Context> ctx, std::string module_name, std::vector<v8::Local<v8::String>> export_names);
+
+    v8::MaybeLocal<v8::Module> createModule(
+        v8::Local<v8::Context> ctx,
+        std::string module_name,
+        std::vector<v8::Local<v8::String>> export_names,
+        v8::Module::SyntheticModuleEvaluationSteps step
+    );
 
 }
 #endif

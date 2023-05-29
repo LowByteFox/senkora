@@ -4,8 +4,10 @@
 #include "v8-primitive.h"
 #include "v8-script.h"
 #include "v8-message.h"
+#include "v8-value.h"
 #include <cstdio>
 #include <cstring>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <fstream>
@@ -63,20 +65,12 @@ namespace Senkora
         return v8::ScriptCompiler::CompileModule(isolate, &source);
     }
 
-    v8::MaybeLocal<v8::Value> step(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod)
-    {
-        v8::Isolate *isolate = ctx->GetIsolate();
-
-        // tu nastavuj mrdku
-        v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, "test").ToLocalChecked();
-        v8::Local<v8::Value> val = v8::String::NewFromUtf8(isolate, "im builtin").ToLocalChecked();
-        mod->SetSyntheticModuleExport(isolate, name, val);
-
-        return v8::Boolean::New(ctx->GetIsolate(), true);
-    }
-
-    v8::MaybeLocal<v8::Module> createModule(v8::Local<v8::Context> ctx, std::string module_name, std::vector<v8::Local<v8::String>> export_names)
-    {
+    v8::MaybeLocal<v8::Module> createModule(
+        v8::Local<v8::Context> ctx,
+        std::string module_name,
+        std::vector<v8::Local<v8::String>> export_names,
+        v8::Module::SyntheticModuleEvaluationSteps step
+    ) {
         v8::Isolate *isolate = ctx->GetIsolate();
 
         v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, module_name.c_str()).ToLocalChecked();

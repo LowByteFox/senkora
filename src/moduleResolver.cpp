@@ -47,8 +47,7 @@ namespace moduleResolution
 
         if (!base.compare(0, 8, "senkora:"))
         {
-            v8::Local<v8::String> test_export = v8::String::NewFromUtf8(ctx->GetIsolate(), "test").ToLocalChecked();
-            return Senkora::createModule(ctx, name, {test_export});
+            return moduleCache[base];
         }
 
         if (base.c_str()[0] != '/')
