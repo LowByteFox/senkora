@@ -5,7 +5,7 @@ jobs:
   Compile:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: cachix/install-nix-action@v20
       with:
         nix_path: nixpkgs=channel:nixos-22.11
@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Download senkora-linux artifact
         uses: actions/download-artifact@v3
