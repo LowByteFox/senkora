@@ -2,6 +2,7 @@
 #include "v8-local-handle.h"
 #include "v8-maybe.h"
 #include "v8-object.h"
+#include "v8-persistent-handle.h"
 #include "v8-primitive.h"
 #include "v8-script.h"
 #include <Senkora.hpp>
@@ -17,7 +18,7 @@
 namespace fs = std::filesystem;
 
 extern std::map<int, Senkora::MetadataObject*> moduleMetadatas;
-extern std::map<int, v8::Persistent<v8::Module>> moduleCache;
+extern std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
 namespace moduleResolution {
     void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta) {
@@ -45,6 +46,10 @@ namespace moduleResolution {
             base = fs::path(base).lexically_normal();
         }
 
+        if (moduleCache.find(base) != moduleCache.end()) {
+            return moduleCache[base];
+        }
+
         std::string code = Senkora::readFile(base);
 
         Senkora::MetadataObject *meta = new Senkora::MetadataObject();
@@ -53,6 +58,8 @@ namespace moduleResolution {
         meta->Set(ctx, "url", url);
 
         v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
+
+        moduleCache[base] = mod;
 
         moduleMetadatas[mod->ScriptId()] = meta;
 

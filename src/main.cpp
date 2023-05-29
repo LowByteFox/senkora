@@ -65,7 +65,7 @@ void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 static int lastScriptId = 0;
 std::map<int, Senkora::MetadataObject*> moduleMetadatas;
-std::map<int, v8::Persistent<v8::Module>> moduleCache;
+std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
 void run(std::string nextArg, std::any data) {
     if (nextArg.length() == 0) return;
@@ -89,12 +89,13 @@ void run(std::string nextArg, std::any data) {
 
     std::string code = Senkora::readFile(filePath);
     Senkora::MetadataObject *meta = new Senkora::MetadataObject();
-    v8::Local<v8::Value> url= v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked();
+    v8::Local<v8::Value> url = v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked();
 
     meta->Set(ctx, "url", url);
 
     v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
+    moduleCache[filePath] = mod;
     moduleMetadatas[mod->ScriptId()] = meta;
     v8::Maybe<bool> out = mod->InstantiateModule(ctx, moduleResolution::moduleResolver);
 
