@@ -1,5 +1,4 @@
-import "./pth/kk.js"
-
 export default {
-  hello: "world",
-};
+    hello: "Ahoj, ",
+    world: "svet!"
+}

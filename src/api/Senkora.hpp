@@ -1,6 +1,7 @@
 #ifndef SENKORA_API
 #define SENKORA_API
 
+#include "v8-isolate.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 #include <map>
@@ -27,6 +28,6 @@ namespace Senkora {
 
     std::string readFile(std::string name);
     v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, std::string code);
-}
 
+}
 #endif

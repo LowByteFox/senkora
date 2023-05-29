@@ -8,6 +8,7 @@
 #include "v8-local-handle.h"
 #include "v8-maybe.h"
 #include "v8-object.h"
+#include "v8-persistent-handle.h"
 #include "v8-primitive.h"
 #include "v8-promise.h"
 #include "v8-script.h"
@@ -64,6 +65,7 @@ void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 static int lastScriptId = 0;
 std::map<int, Senkora::MetadataObject*> moduleMetadatas;
+std::map<int, v8::Persistent<v8::Module>> moduleCache;
 
 void run(std::string nextArg, std::any data) {
     if (nextArg.length() == 0) return;
@@ -93,11 +95,8 @@ void run(std::string nextArg, std::any data) {
 
     v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
-    v8::Maybe<bool> out = mod->InstantiateModule(ctx, [](v8::Local<v8::Context> context, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> referrer) {
-        return v8::MaybeLocal<v8::Module>();
-    });
-
     moduleMetadatas[mod->ScriptId()] = meta;
+    v8::Maybe<bool> out = mod->InstantiateModule(ctx, moduleResolution::moduleResolver);
 
     v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
 }
