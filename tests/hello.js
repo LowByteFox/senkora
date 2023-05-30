@@ -1,8 +1,4 @@
 import data from "./data.js";
-import { hello } from "senkora:dummy";
-
-println(hello);
-
 import data2 from "./newData.js";
 
 println(data);
@@ -15,3 +11,4 @@ println(data.hello + data.world);
 
 println(data2.AhojWorld);
 println(data2.HelloSvet);
+

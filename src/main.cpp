@@ -5,6 +5,7 @@
 #include "v8-container.h"
 #include "v8-context.h"
 #include "v8-data.h"
+#include "v8-exception.h"
 #include "v8-local-handle.h"
 #include "v8-maybe.h"
 #include "v8-object.h"
@@ -76,6 +77,7 @@ void run(std::string nextArg, std::any data) {
     v8::Isolate *isolate = std::any_cast<v8::Isolate*>(data);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
+
     v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
     global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
     global->Set(isolate, "println", v8::FunctionTemplate::New(isolate, Println));
@@ -103,6 +105,7 @@ void run(std::string nextArg, std::any data) {
 
     moduleCache[filePath] = mod;
     moduleMetadatas[mod->ScriptId()] = meta;
+
     v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
 
     v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);

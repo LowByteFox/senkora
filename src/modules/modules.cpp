@@ -1,5 +1,8 @@
 #include "modules.hpp"
 #include "dummy.hpp"
+#include "../../config.h"
+#include "v8-primitive.h"
+#include "v8-script.h"
 
 #include <map>
 #include <v8.h>
@@ -39,6 +42,14 @@ namespace Senkora::Modules {
 
         if (!base.compare(0, 8, "senkora:"))
         {
+            if (moduleCache.find(base) == moduleCache.end()) {
+                std::string msg = "Module \"";
+                msg += base;
+                msg += "\" wasn't found";
+                v8::Exception::Error(v8::String::NewFromUtf8(
+                            ctx->GetIsolate(), msg.c_str()).ToLocalChecked());
+                return v8::MaybeLocal<v8::Module>();
+            }
             return moduleCache[base];
         }
 
@@ -88,8 +99,10 @@ namespace Senkora::Modules {
     void initBuiltinModules(v8::Isolate *isolate) {
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
 
+#ifdef ENABLE_DUMMY
         moduleCache["senkora:dummy"] = createModule(ctx, 
             "senkora:dummy",
             dummy::getExports(isolate), dummy::init).ToLocalChecked();
+#endif
     }
 }

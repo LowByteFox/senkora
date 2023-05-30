@@ -57,7 +57,9 @@ namespace Senkora
     {
         v8::Isolate *isolate = ctx->GetIsolate();
 
-        v8::ScriptOrigin origin(isolate, v8::Undefined(isolate), 0, 0, false, lastScriptId, v8::Local<v8::Value>(), false, false, true);
+        v8::ScriptOrigin origin(isolate,
+                v8::Local<v8::Integer>(),
+                0, 0, false, lastScriptId, v8::Local<v8::Value>(), false, false, true);
         lastScriptId++;
 
         v8::ScriptCompiler::Source source(v8::String::NewFromUtf8(isolate, code.c_str()).ToLocalChecked(), origin);
