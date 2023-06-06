@@ -46,9 +46,8 @@ namespace Senkora::Modules {
                 std::string msg = "Module \"";
                 msg += base;
                 msg += "\" wasn't found";
-                v8::Exception::Error(v8::String::NewFromUtf8(
-                            ctx->GetIsolate(), msg.c_str()).ToLocalChecked());
-                return v8::MaybeLocal<v8::Module>();
+                printf("%s: Module \"%s\" not found!\n", fs::path(urlPath).filename().c_str(), base.c_str());
+                exit(1);
             }
             return moduleCache[base];
         }

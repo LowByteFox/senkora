@@ -109,6 +109,17 @@ void run(std::string nextArg, std::any data) {
     v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
 
     v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
+
+    if (mod->GetStatus() == v8::Module::kErrored) {
+        v8::Local<v8::Value> err = mod->GetException();
+        v8::Local<v8::Message> msg = v8::Exception::CreateMessage(isolate, err);
+        int line = msg->GetLineNumber(ctx).FromJust();
+        int col = msg->GetStartColumn(ctx).FromJust();
+        v8::String::Utf8Value str(isolate, msg->Get());
+        const char *cstr = ToCString(str);
+        printf("\n\n");
+        printf("%s:%d:%d: %s\n", fs::path(filePath).filename().c_str(), line, col, cstr);
+    }
 }
 
 void eval(std::string nextArg, std::any data) {

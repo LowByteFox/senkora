@@ -1,3 +1,3 @@
-import { test } from "senkora:std";
+import { hello } from "senkora:dummy";
 
-println(test);
+println(hello);
