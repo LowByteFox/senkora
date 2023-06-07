@@ -1,8 +1,10 @@
 #include "modules.hpp"
 #include "dummy.hpp"
 #include "../../config.h"
+#include "v8-message.h"
 #include "v8-primitive.h"
 #include "v8-script.h"
+#include "v8-value.h"
 
 #include <map>
 #include <v8.h>

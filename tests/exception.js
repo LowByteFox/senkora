@@ -1,6 +1,7 @@
 import { hello } from "senkora:dummy";
 
-println(hello);
+const val = new SenkoraClass();
+println(val.name);
 
 print("Hello, ");
 

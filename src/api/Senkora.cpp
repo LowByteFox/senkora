@@ -1,5 +1,7 @@
 #include "Senkora.hpp"
 #include "v8-context.h"
+#include "v8-exception.h"
+#include "v8-isolate.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 #include "v8-script.h"
@@ -65,5 +67,33 @@ namespace Senkora
         v8::ScriptCompiler::Source source(v8::String::NewFromUtf8(isolate, code.c_str()).ToLocalChecked(), origin);
 
         return v8::ScriptCompiler::CompileModule(isolate, &source);
+    }
+
+    v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type) {
+        v8::Isolate *isolate = ctx->GetIsolate();
+        v8::Local<v8::Value> err;
+        v8::Local<v8::String> str = v8::String::NewFromUtf8(isolate, message).ToLocalChecked();
+
+        switch (type) {
+            case ExceptionType::RANGE:
+                err = v8::Exception::RangeError(str);
+                break;
+            case ExceptionType::REFERENCE:
+                err = v8::Exception::ReferenceError(str);
+                break;
+            case ExceptionType::SYNTAX:
+                err = v8::Exception::SyntaxError(str);
+                break;
+            case ExceptionType::TYPE:
+                err = v8::Exception::TypeError(str);
+                break;
+            default:
+                err = v8::Exception::Error(str);
+                break;
+        }
+
+        isolate->ThrowException(err);
+
+        return err;
     }
 }

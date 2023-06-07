@@ -1,6 +1,7 @@
 #ifndef SENKORA_API
 #define SENKORA_API
 
+#include "v8-exception.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 #include <map>
@@ -17,6 +18,14 @@ namespace Senkora
         v8::Local<v8::Name> key;
         v8::Local<v8::Value> value;
     } Metadata;
+
+    typedef enum {
+        RANGE = 1,
+        REFERENCE,
+        SYNTAX,
+        TYPE,
+        ERROR
+    } ExceptionType;
 
     class MetadataObject
     {
@@ -39,5 +48,6 @@ namespace Senkora
         v8::Module::SyntheticModuleEvaluationSteps step
     );
 
+    v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ERROR);
 }
 #endif

@@ -6,6 +6,7 @@
 #include "v8-context.h"
 #include "v8-data.h"
 #include "v8-exception.h"
+#include "v8-function.h"
 #include "v8-local-handle.h"
 #include "v8-maybe.h"
 #include "v8-object.h"
@@ -78,10 +79,25 @@ void run(std::string nextArg, std::any data) {
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
 
+    isolate->SetCaptureStackTraceForUncaughtExceptions(true);
+
     v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
     global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
     global->Set(isolate, "println", v8::FunctionTemplate::New(isolate, Println));
 
+    /*
+    // create class
+    v8::Local<v8::FunctionTemplate> classTemplate = v8::FunctionTemplate::New(isolate);
+    classTemplate->SetClassName(v8::String::NewFromUtf8(isolate, "SenkoraClass").ToLocalChecked());
+    //  add a field
+    classTemplate->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name").ToLocalChecked(), [](v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+        info.GetReturnValue().Set(v8::String::NewFromUtf8(info.GetIsolate(), "Senkora").ToLocalChecked());
+    });
+
+
+    global->Set(isolate, "SenkoraClass", classTemplate);
+
+    */
     isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
 
     v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
@@ -112,13 +128,21 @@ void run(std::string nextArg, std::any data) {
 
     if (mod->GetStatus() == v8::Module::kErrored) {
         v8::Local<v8::Value> err = mod->GetException();
+        v8::String::Utf8Value str(isolate, err);
+        const char *cstr = ToCString(str);
+
+        if (!err->IsNativeError()) {
+            printf("%s: %s\n", fs::path(filePath).filename().c_str(), cstr);
+            return;
+        }
+
         v8::Local<v8::Message> msg = v8::Exception::CreateMessage(isolate, err);
         int line = msg->GetLineNumber(ctx).FromJust();
         int col = msg->GetStartColumn(ctx).FromJust();
-        v8::String::Utf8Value str(isolate, msg->Get());
-        const char *cstr = ToCString(str);
-        printf("\n\n");
         printf("%s:%d:%d: %s\n", fs::path(filePath).filename().c_str(), line, col, cstr);
+
+        auto stack = msg->GetStackTrace();
+        printf("%d\n", stack->GetFrameCount());
     }
 }
 
