@@ -49,5 +49,7 @@ namespace Senkora
     );
 
     v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ERROR);
+
+    void printException(v8::Local<v8::Context> ctx, v8::Local<v8::Value> exception);
 }
 #endif

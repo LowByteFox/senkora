@@ -127,68 +127,8 @@ void run(std::string nextArg, std::any data) {
     v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
 
     if (mod->GetStatus() == v8::Module::kErrored) {
-        v8::Local<v8::Value> err = mod->GetException();
-        v8::String::Utf8Value str(isolate, err);
-        const char *cstr = ToCString(str);
-
-        if (!err->IsNativeError()) {
-            printf("%s: %s\n", fs::path(filePath).filename().c_str(), cstr);
-            return;
-        }
-
-        v8::Local<v8::Message> msg = v8::Exception::CreateMessage(isolate, err);
-        int line = msg->GetLineNumber(ctx).FromJust();
-        int col = msg->GetStartColumn(ctx).FromJust();
-        printf("%s:%d:%d: %s\n", fs::path(filePath).filename().c_str(), line, col, cstr);
-
-        auto stack = msg->GetStackTrace();
-        printf("%d\n", stack->GetFrameCount());
+        Senkora::printException(ctx, mod->GetException());
     }
-}
-
-void eval(std::string nextArg, std::any data) {
-    if (nextArg.length() == 0) {
-        printf("Error: string expression\n");
-        return;
-    }
-
-    v8::Isolate *isolate = std::any_cast<v8::Isolate*>(data);
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::HandleScope handle_scope(isolate);
-    v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
-    global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
-
-    isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
-
-    v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
-    v8::Context::Scope context_scope(ctx);
-
-    Senkora::Modules::initBuiltinModules(isolate);
-
-    std::string currentPath = fs::current_path();
-    currentPath += "/eval.js";
-
-    std::string oldSubstring = "\\n";
-    std::string newSubstring = "\n";
-
-    size_t pos = nextArg.find(oldSubstring);
-    while (pos != std::string::npos) {
-        nextArg.replace(pos, oldSubstring.length(), newSubstring);
-        pos = nextArg.find(oldSubstring, pos + newSubstring.length());
-    }
-
-    Senkora::MetadataObject *meta = new Senkora::MetadataObject();
-    v8::Local<v8::Value> url = v8::String::NewFromUtf8(isolate, currentPath.c_str()).ToLocalChecked();
-
-    meta->Set(ctx, "url", url);
-
-    v8::Local<v8::Module> mod = Senkora::compileScript(ctx, nextArg).ToLocalChecked();
-
-    moduleCache[currentPath] = mod;
-    moduleMetadatas[mod->ScriptId()] = meta;
-    v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
-
-    v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
 }
 
 void ArgHandler::printHelp() {
@@ -199,7 +139,6 @@ Usage: senkora [OPTIONS] [ARGS]
 OPTIONS:
   help, -h,           Display this help message
   version, -v         Display version
-  eval <EXPR>         Evaluate string expression, returned value will be printed to stdout
   run <SCRIPT>        Execute <SCRIPT> file
 )");
 }
@@ -219,7 +158,6 @@ int main(int argc, char* argv[]) {
 
     ArgHandler argHandler(argc, argv);
     argHandler.onArg("run", run, isolate);
-    argHandler.onArg("eval", eval, isolate);
     argHandler.run();
 
     isolate->Dispose();

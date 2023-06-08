@@ -1,5 +1,6 @@
 #include "Senkora.hpp"
 #include "v8-context.h"
+#include "v8-debug.h"
 #include "v8-exception.h"
 #include "v8-isolate.h"
 #include "v8-local-handle.h"
@@ -13,6 +14,12 @@
 #include <sstream>
 #include <string>
 #include <fstream>
+#include <filesystem>
+
+extern const char* ToCString(const v8::String::Utf8Value& value); 
+extern std::map<int, Senkora::MetadataObject *> moduleMetadatas;
+
+namespace fs = std::filesystem;
 
 static int lastScriptId;
 
@@ -95,5 +102,55 @@ namespace Senkora
         isolate->ThrowException(err);
 
         return err;
+    }
+
+    void printException(v8::Local<v8::Context> ctx, v8::Local<v8::Value> exception) {
+        v8::Isolate *isolate = ctx->GetIsolate();
+
+        v8::String::Utf8Value str(isolate, exception);
+        const char* cstr = ToCString(str);
+
+        if (!exception->IsNativeError()) {
+            printf("Error: %s\n", cstr);
+            return;
+        }
+
+        v8::Local<v8::Message> msg = v8::Exception::CreateMessage(isolate, exception);
+        int scriptId = msg->GetScriptOrigin().ScriptId();
+        MetadataObject *metadata = moduleMetadatas[scriptId];
+
+        int line = msg->GetLineNumber(ctx).FromJust();
+        int col = msg->GetStartColumn(ctx).FromJust();
+
+        if (!metadata) {
+            printf("%s:%d:%d: %s\n", "Wrong ScriptID?", line, col, cstr);
+        } else {
+            v8::Local<v8::Value> filename = metadata->Get("url");
+            v8::String::Utf8Value filenameStr(isolate, filename);
+            fs::path path = fs::path(ToCString(filenameStr));
+            printf("%s:%d:%d: %s\n", path.filename().c_str(), line, col, cstr);
+        }
+
+        v8::Local<v8::StackTrace> stack = msg->GetStackTrace();
+        int length = stack->GetFrameCount();
+
+        for (int i = 0; i < length; i++) {
+            v8::Local<v8::StackFrame> frame = stack->GetFrame(isolate, i);
+            v8::Local<v8::String> funcName = frame->GetFunctionName();
+            int id = frame->GetScriptId();
+            MetadataObject *metadata = moduleMetadatas[id];
+            if (metadata) {
+                v8::Local<v8::Value> filename = metadata->Get("url");
+                v8::String::Utf8Value filenameStr(isolate, filename);
+                fs::path path = fs::path(ToCString(filenameStr));
+                if (funcName.IsEmpty()) {
+                    printf("\tat %s (%d:%d)\n", path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
+                } else {
+                    v8::String::Utf8Value funcNameStr(isolate, funcName);
+                    printf("\tat %s (%s:%d:%d)\n", path.filename().c_str(), ToCString(funcNameStr), frame->GetLineNumber(), frame->GetColumn());
+                }
+            } else {
+            }
+        }
     }
 }

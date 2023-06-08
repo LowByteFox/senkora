@@ -1,10 +1,12 @@
 import { hello } from "senkora:dummy";
 
-const val = new SenkoraClass();
-println(val.name);
+println(hello);
 
-print("Hello, ");
+println("Hello, ");
 
-throw new Error("World");
+function xd() {
+    throw new Error("World");
+}
+xd();
 
 println("World");
