@@ -9,3 +9,5 @@ function test() {
 }
 
 test();
+
+eval("println('Hello from eval!')");

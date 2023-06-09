@@ -8,7 +8,9 @@
 #include "v8-context.h"
 #include "v8-data.h"
 #include "v8-exception.h"
+#include "v8-function-callback.h"
 #include "v8-function.h"
+#include "v8-initialization.h"
 #include "v8-local-handle.h"
 #include "v8-maybe.h"
 #include "v8-object.h"
@@ -35,6 +37,9 @@ const char* ToCString(const v8::String::Utf8Value& value) {
     return *value ? *value : "<string conversion failed>";
 }
 
+void safeEval(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Error is disabled for security reasons");
+}
 void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
     for (int i = 0; i < args.Length(); i++) {
         v8::Local<v8::Value> val = args[i];
@@ -143,6 +148,7 @@ int main(int argc, char* argv[]) {
     v8::V8::InitializeICUDefaultLocation(argv[0]);
     v8::V8::InitializeExternalStartupData(argv[0]);
     std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
+    v8::V8::SetFlagsFromString("--disallow-code-generation-from-strings --use-strict true ");
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
 
