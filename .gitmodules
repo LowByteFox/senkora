@@ -1,0 +1,3 @@
+[submodule "libs/libFoxEvents"]
+	path = libs/libFoxEvents
+	url = git@github.com:SenkoraJS/libFoxEvents.git

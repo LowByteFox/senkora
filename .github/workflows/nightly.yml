@@ -10,6 +10,9 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-22.11
     - run: nix-shell --run "true"
+
+    - name: Update Submodules
+      run: git submodule update --recursive --remote
         
     - name: Compile
       run: nix-shell --run "./make.sh"
