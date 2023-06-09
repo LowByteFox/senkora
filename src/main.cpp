@@ -1,6 +1,8 @@
 #include <Senkora.hpp>
+#include "globalThis.hpp"
 
 #include "cli.hpp"
+#include "eventLoop.hpp"
 #include "modules/modules.hpp"
 #include "v8-container.h"
 #include "v8-context.h"
@@ -35,7 +37,6 @@ const char* ToCString(const v8::String::Utf8Value& value) {
 
 void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
     for (int i = 0; i < args.Length(); i++) {
-        v8::HandleScope handle_scope(args.GetIsolate());
         v8::Local<v8::Value> val = args[i];
         if (!val->IsObject()) {
             v8::String::Utf8Value str(args.GetIsolate(), args[i]);
@@ -69,6 +70,8 @@ static int lastScriptId = 0;
 std::map<int, Senkora::MetadataObject*> moduleMetadatas;
 std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
+extern events::EventLoop *globalLoop;
+
 void run(std::string nextArg, std::any data) {
     if (nextArg.length() == 0) {
         printf("Error: missing file\n");
@@ -81,23 +84,13 @@ void run(std::string nextArg, std::any data) {
 
     isolate->SetCaptureStackTraceForUncaughtExceptions(true);
 
-    v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
-    global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print)); 
-    global->Set(isolate, "println", v8::FunctionTemplate::New(isolate, Println));
+    globalLoop = events::Init();
 
-    /*
-    // create class
-    v8::Local<v8::FunctionTemplate> classTemplate = v8::FunctionTemplate::New(isolate);
-    classTemplate->SetClassName(v8::String::NewFromUtf8(isolate, "SenkoraClass").ToLocalChecked());
-    //  add a field
-    classTemplate->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name").ToLocalChecked(), [](v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-        info.GetReturnValue().Set(v8::String::NewFromUtf8(info.GetIsolate(), "Senkora").ToLocalChecked());
-    });
+    v8::Local<v8::ObjectTemplate> global = globalObject::Init(isolate);
+    globalObject::AddFunction(isolate, global, "print", v8::FunctionTemplate::New(isolate, Print));
+    globalObject::AddFunction(isolate, global, "println", v8::FunctionTemplate::New(isolate, Println));
+    globalObject::AddFunction(isolate, global, "setTimeout", v8::FunctionTemplate::New(isolate, events::setTimeout));
 
-
-    global->Set(isolate, "SenkoraClass", classTemplate);
-
-    */
     isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
 
     v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
@@ -128,7 +121,10 @@ void run(std::string nextArg, std::any data) {
 
     if (mod->GetStatus() == v8::Module::kErrored) {
         Senkora::printException(ctx, mod->GetException());
+        exit(1);
     }
+
+    events::Run(globalLoop);
 }
 
 void ArgHandler::printHelp() {
