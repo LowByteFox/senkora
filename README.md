@@ -5,4 +5,4 @@
 
 ## Building
 Before you can build it, you must fetch submodules
-`git submodule update --recursive --remote`
+`git submodule update --init --recursive`

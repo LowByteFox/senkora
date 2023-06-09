@@ -12,7 +12,7 @@ jobs:
     - run: nix-shell --run "true"
 
     - name: Update Submodules
-      run: git submodule update --recursive --remote
+      run: git submodule update --init --recursive
         
     - name: Compile
       run: nix-shell --run "./make.sh"
