@@ -1,4 +1,4 @@
-let i = 1000;
+let i = 500;
 
 function test() {
     i -= 1;
@@ -8,6 +8,4 @@ function test() {
     }
 }
 
-test();
-
-eval("println('Hello from eval!')");
+setTimeout(test, i);

@@ -3,6 +3,7 @@
 #include "v8-local-handle.h"
 #include "v8-object.h"
 #include <cstdint>
+#include <v8-exception.h>
 extern "C" {
     #include <event.h>
 }
@@ -103,11 +104,20 @@ namespace events {
     void executionFunc(void *args) {
         EventLoopData *funcArgs = (EventLoopData *) args;
         v8::Isolate *isolate = funcArgs->isolate;
+        v8::Isolate::Scope isolateScope(isolate);
+        v8::HandleScope scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+        v8::Context::Scope contextScope(isolate->GetCurrentContext());
+
         v8::Local<v8::Value> preFunc = funcArgs->callback.Get(isolate);
         v8::Local<v8::Object> global = funcArgs->global.Get(isolate);
-        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
 
         v8::Local<v8::Function> func = v8::Local<v8::Function>::Cast(preFunc);
-        v8::Local<v8::Value> result = func->Call(ctx, global, 0, nullptr).ToLocalChecked();
+        v8::TryCatch tryCatch(isolate);
+        v8::MaybeLocal<v8::Value> result = func->Call(ctx, global, 0, nullptr);
+
+        if (tryCatch.HasCaught() || result.IsEmpty()) {
+            Senkora::printException(ctx, tryCatch.Exception());
+        }
     }
 }

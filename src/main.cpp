@@ -41,6 +41,8 @@ void safeEval(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Error is disabled for security reasons");
 }
 void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate::Scope isolate_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(args.GetIsolate());
     for (int i = 0; i < args.Length(); i++) {
         v8::Local<v8::Value> val = args[i];
         if (!val->IsObject()) {
@@ -66,6 +68,8 @@ void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void Println(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate::Scope isolate_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(args.GetIsolate());
     Print(args);
     printf("\n");
     fflush(stdout);
