@@ -83,9 +83,6 @@ std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
 extern events::EventLoop *globalLoop;
 
-void quickPromiseHook(void *data) {
-}
-
 void run(std::string nextArg, std::any data) {
     if (nextArg.length() == 0) {
         printf("Error: missing file\n");
