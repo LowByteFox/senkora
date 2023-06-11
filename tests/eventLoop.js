@@ -1,26 +1,36 @@
+let println = console.log;
 let i = 500;
-let j = 0;
+let j = 1;
+let k = 0;
+let intervalId = 0;
 
 function test() {
     i -= 1;
     println(`Function with iteration ${i}`);
     if (i > 0) {
         let id = setTimeout(test, i);
-        if (id > 10) {
+        let id2 = setImmediate(immediateTest);
+        if (j > 10) {
             clearTimeout(id);
-            immediateTest();
+            clearImmediate(id2);
+            intervalId = setInterval(helloRepeatedly, 1000);
         }
     }
 }
 
 function immediateTest() {
     println(`Immediate function with iteration ${j}`);
-    let id = setImmediate(immediateTest);
-    j += 1;
+    j++;
+}
 
-    if (j > 10) {
-        clearImmediate(id);
+function helloRepeatedly() {
+    println("Hello");
+    k++;
+    if (k == 10) {
+        println("Goodbye awe");
+        clearInterval(intervalId);
     }
 }
 
 setTimeout(test, i);
+setImmediate(immediateTest);

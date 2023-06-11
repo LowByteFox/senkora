@@ -120,6 +120,54 @@ namespace events {
         args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
     }
 
+    void setInterval(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+
+        if (args.Length() < 2) {
+            Senkora::throwException(ctx, "setInterval requires at least 2 arguments");
+        }
+
+        if (!args[0]->IsFunction()) {
+            Senkora::throwException(ctx, "setInterval requires a function as the first argument");
+        }
+
+        if (!args[1]->IsNumber()) {
+            Senkora::throwException(ctx, "setInterval requires a number as the second argument");
+        }
+
+        v8::Handle<v8::Value> callback(args[0]);
+        int timeout = args[1]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+
+        EventLoopData *funcArgs = new EventLoopData;
+        funcArgs->callback.Reset(isolate, callback);
+        funcArgs->global.Reset(isolate, args.This());
+        funcArgs->isolate = isolate;
+
+        foxevents::FoxEvent *event = new foxevents::FoxEvent(timeout, true, executionFunc, funcArgs, restId);
+        Add(globalLoop, event);
+        restId++;
+        args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
+    }
+
+    void clearInterval(const v8::FunctionCallbackInfo<v8::Value>& args) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+
+        if (args.Length() < 1) {
+            Senkora::throwException(ctx, "clearInterval requires at least 1 argument");
+        }
+
+        if (!args[0]->IsNumber()) {
+            Senkora::throwException(ctx, "clearInterval requires a number as the first argument");
+        }
+
+        int id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        Remove(globalLoop, id);
+    }
+
     void clearTimeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
         v8::Isolate *isolate = args.GetIsolate();
         v8::HandleScope scope(isolate);
