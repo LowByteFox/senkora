@@ -1,4 +1,5 @@
 #include <Senkora.hpp>
+#include "event.hpp"
 #include "globalThis.hpp"
 
 #include "cli.hpp"
@@ -21,6 +22,7 @@
 #include "v8-value.h"
 #include <any>
 #include <system_error>
+#include <v8-internal.h>
 #include <v8.h>
 #include <v8-isolate.h>
 #include <libplatform/libplatform.h>
@@ -80,6 +82,9 @@ std::map<int, Senkora::MetadataObject*> moduleMetadatas;
 std::map<std::string, v8::Local<v8::Module>> moduleCache;
 
 extern events::EventLoop *globalLoop;
+
+void quickPromiseHook(void *data) {
+}
 
 void run(std::string nextArg, std::any data) {
     if (nextArg.length() == 0) {

@@ -1,5 +1,4 @@
-let println = console.log;
-let i = 500;
+/*let i = 500;
 let j = 1;
 let k = 0;
 let intervalId = 0;
@@ -34,3 +33,20 @@ function helloRepeatedly() {
 
 setTimeout(test, i);
 setImmediate(immediateTest);
+*/
+// sleep test
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function test() {
+    println("Hello");
+    await sleep(1000);
+    println("Goodbye");
+}
+
+test();
+
+setTimeout(async () => {
+    await sleep(500);
+    println("Hello");
+}, 10);
