@@ -9,13 +9,13 @@
 #include <cstdint>
 #include <v8-local-handle.h>
 #include <v8.h>
-#include <event.h>
+#include <event.hpp>
 #include <vector>
 
 namespace events {
     typedef struct {
-        FoxEventQueue *immediate;
-        FoxEventQueue *rest;
+        foxevents::FoxEventQueue *immediate;
+        foxevents::FoxEventQueue *rest;
     } EventLoop;
 
     typedef struct {
@@ -28,11 +28,10 @@ namespace events {
     EventLoop *Init();
 
     void Run(EventLoop *loop);
-    void Free(EventLoop *loop);
-    void Add(EventLoop *loop, FoxEvent *event);
-    void AddImmediate(EventLoop *loop, FoxEvent *event);
-    void Remove(EventLoop *loop, FoxEvent *event);
-    void RemoveImmediate(EventLoop *loop, FoxEvent *event);
+    void Add(EventLoop *loop, foxevents::FoxEvent *event);
+    void AddImmediate(EventLoop *loop, foxevents::FoxEvent *event);
+    void Remove(EventLoop *loop, int id);
+    void RemoveImmediate(EventLoop *loop, int id);
     bool HasEvents(EventLoop *loop);
 
     void setTimeout(const v8::FunctionCallbackInfo<v8::Value>& args);

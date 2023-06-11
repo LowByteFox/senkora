@@ -99,6 +99,9 @@ void run(std::string nextArg, std::any data) {
     globalObject::AddFunction(isolate, global, "print", v8::FunctionTemplate::New(isolate, Print));
     globalObject::AddFunction(isolate, global, "println", v8::FunctionTemplate::New(isolate, Println));
     globalObject::AddFunction(isolate, global, "setTimeout", v8::FunctionTemplate::New(isolate, events::setTimeout));
+    globalObject::AddFunction(isolate, global, "setImmediate", v8::FunctionTemplate::New(isolate, events::setImmediate));
+    globalObject::AddFunction(isolate, global, "clearTimeout", v8::FunctionTemplate::New(isolate, events::clearTimeout));
+    globalObject::AddFunction(isolate, global, "clearImmediate", v8::FunctionTemplate::New(isolate, events::clearImmediate));
 
     isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
 

@@ -4,9 +4,7 @@
 #include "v8-object.h"
 #include <cstdint>
 #include <v8-exception.h>
-extern "C" {
-    #include <event.h>
-}
+#include <event.hpp>
 #include <sys/time.h>
 
 #include "Senkora.hpp"
@@ -15,11 +13,13 @@ extern "C" {
 
 events::EventLoop *globalLoop;
 
+static int restId = 1;
+
 namespace events {
     EventLoop *Init() {
         EventLoop *loop = new EventLoop;
-        loop->immediate = fox_event_queue_create();
-        loop->rest = fox_event_queue_create();
+        loop->immediate = new foxevents::FoxEventQueue();
+        loop->rest = new foxevents::FoxEventQueue();
 
         return loop;
     }
@@ -27,42 +27,33 @@ namespace events {
     void Run(EventLoop *loop) {
         while (HasEvents(loop)) {
             uint64_t now = getTimeInMs();
-            loop->immediate->current_time = now;
-            loop->rest->current_time = now;
-
-            if (!fox_event_queue_empty(loop->immediate)) {
-                fox_event_queue_run(loop->immediate);
+            if (!loop->immediate->empty()) {
+                loop->immediate->run(now);
             }
-            if (!fox_event_queue_empty(loop->rest)) {
-                fox_event_queue_run(loop->rest);
+            if (!loop->rest->empty()) {
+                loop->rest->run(now);
             }
         }
     }
 
-    void Free(EventLoop *loop) {
-        fox_event_queue_destroy(loop->immediate);
-        fox_event_queue_destroy(loop->rest);
-        delete loop;
+    void Add(EventLoop *loop, foxevents::FoxEvent *event) {
+        loop->rest->add(event);
     }
 
-    void Add(EventLoop *loop, FoxEvent *event) {
-        fox_event_queue_add(loop->rest, event);
+    void AddImmediate(EventLoop *loop, foxevents::FoxEvent *event) {
+        loop->immediate->add(event);
     }
 
-    void AddImmediate(EventLoop *loop, FoxEvent *event) {
-        fox_event_queue_add(loop->immediate, event);
+    void Remove(EventLoop *loop, int id) {
+        loop->rest->remove_id(id);
     }
 
-    void Remove(EventLoop *loop, FoxEvent *event) {
-        fox_event_queue_remove(loop->rest, event);
-    }
-
-    void RemoveImmediate(EventLoop *loop, FoxEvent *event) {
-        fox_event_queue_remove(loop->immediate, event);
+    void RemoveImmediate(EventLoop *loop, int id) {
+        loop->immediate->remove_id(id);
     }
 
     bool HasEvents(EventLoop *loop) {
-        return !fox_event_queue_empty(loop->immediate) || !fox_event_queue_empty(loop->rest);
+        return !loop->immediate->empty() || !loop->rest->empty();
     }
 
     uint64_t getTimeInMs() {
@@ -97,8 +88,70 @@ namespace events {
         funcArgs->global.Reset(isolate, args.This());
         funcArgs->isolate = isolate;
 
-        FoxEvent *event = fox_event_create(getTimeInMs() + timeout, false, executionFunc, funcArgs);
+        foxevents::FoxEvent *event = new foxevents::FoxEvent(timeout, false, executionFunc, funcArgs, restId);
         Add(globalLoop, event);
+        restId++;
+        args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
+    }
+
+    void setImmediate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+
+        if (args.Length() < 1) {
+            Senkora::throwException(ctx, "setImmediate requires at least 1 argument");
+        }
+
+        if (!args[0]->IsFunction()) {
+            Senkora::throwException(ctx, "setImmediate requires a function as the first argument");
+        }
+
+        v8::Handle<v8::Value> callback(args[0]);
+
+        EventLoopData *funcArgs = new EventLoopData;
+        funcArgs->callback.Reset(isolate, callback);
+        funcArgs->global.Reset(isolate, args.This());
+        funcArgs->isolate = isolate;
+
+        foxevents::FoxEvent *event = new foxevents::FoxEvent(0, false, executionFunc, funcArgs, restId);
+        AddImmediate(globalLoop, event);
+        restId++;
+        args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
+    }
+
+    void clearTimeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+
+        if (args.Length() < 1) {
+            Senkora::throwException(ctx, "clearTimeout requires at least 1 argument");
+        }
+
+        if (!args[0]->IsNumber()) {
+            Senkora::throwException(ctx, "clearTimeout requires a number as the first argument");
+        }
+
+        int id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        Remove(globalLoop, id);
+    }
+
+    void clearImmediate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+
+        if (args.Length() < 1) {
+            Senkora::throwException(ctx, "clearImmediate requires at least 1 argument");
+        }
+
+        if (!args[0]->IsNumber()) {
+            Senkora::throwException(ctx, "clearImmediate requires a number as the first argument");
+        }
+
+        int id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        RemoveImmediate(globalLoop, id);
     }
 
     void executionFunc(void *args) {
