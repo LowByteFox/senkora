@@ -153,4 +153,9 @@ namespace Senkora
             }
         }
     }
+
+    void throwAndPrintException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type) {
+        v8::Local<v8::Value> exc = throwException(ctx, message, type);
+        printException(ctx, exc);
+    }
 }

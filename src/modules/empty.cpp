@@ -1,4 +1,4 @@
-#include "dummy.hpp"
+#include "empty.hpp"
 #include "v8-isolate.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
@@ -8,8 +8,6 @@
 namespace dummy {
     std::vector<v8::Local<v8::String>> getExports(v8::Isolate *isolate) {
         std::vector<v8::Local<v8::String>> exports;
-
-        exports.push_back(v8::String::NewFromUtf8(isolate, "hello").ToLocalChecked());
 
         return exports;
     }

@@ -1,5 +1,5 @@
 #include "modules.hpp"
-#include "dummy.hpp"
+#include "empty.hpp"
 #include "../../config.h"
 #include "v8-message.h"
 #include "v8-primitive.h"
@@ -46,9 +46,9 @@ namespace Senkora::Modules {
         {
             if (moduleCache.find(base) == moduleCache.end()) {
                 std::string msg = "Module \"";
-                msg += base;
-                msg += "\" wasn't found";
-                printf("%s: Module \"%s\" not found!\n", fs::path(urlPath).filename().c_str(), base.c_str());
+                msg += base.c_str();
+                msg += "\" was not found!";
+                Senkora::throwAndPrintException(ctx, msg.c_str());
                 exit(1);
             }
             return moduleCache[base];
@@ -100,10 +100,8 @@ namespace Senkora::Modules {
     void initBuiltinModules(v8::Isolate *isolate) {
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
 
-#ifdef ENABLE_DUMMY
-        moduleCache["senkora:dummy"] = createModule(ctx, 
-            "senkora:dummy",
+        moduleCache["senkora:__empty"] = createModule(ctx, 
+            "senkora:__empty",
             dummy::getExports(isolate), dummy::init).ToLocalChecked();
-#endif
     }
 }
