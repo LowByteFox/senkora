@@ -42,6 +42,7 @@ const char* ToCString(const v8::String::Utf8Value& value) {
 void safeEval(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Error is disabled for security reasons");
 }
+
 void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate::Scope isolate_scope(args.GetIsolate());
     v8::HandleScope handle_scope(args.GetIsolate());
@@ -77,6 +78,11 @@ void Println(const v8::FunctionCallbackInfo<v8::Value>& args) {
     fflush(stdout);
 }
 
+// console.*
+void notImplementedFunc(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Not implemented");
+}
+
 static int lastScriptId = 0;
 std::map<int, Senkora::MetadataObject*> moduleMetadatas;
 std::map<std::string, v8::Local<v8::Module>> moduleCache;
@@ -106,11 +112,19 @@ void run(std::string nextArg, std::any data) {
     globalObject::AddFunction(isolate, global, "clearTimeout", v8::FunctionTemplate::New(isolate, events::clearTimeout));
     globalObject::AddFunction(isolate, global, "clearImmediate", v8::FunctionTemplate::New(isolate, events::clearImmediate));
     globalObject::AddFunction(isolate, global, "clearInterval", v8::FunctionTemplate::New(isolate, events::clearInterval));
+    // globalObject::AddFunction(isolate, global, "console.log", v8::FunctionTemplate::New(isolate, notImplementedFunc));
 
     isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
 
     v8::Local<v8::Context> ctx = v8::Context::New(isolate, nullptr, global);
+    ctx->AllowCodeGenerationFromStrings(false);
+    ctx->SetErrorMessageForCodeGenerationFromStrings(v8::String::NewFromUtf8(isolate, "both 'eval' and 'Function' constructor are disabled!").ToLocalChecked());
     v8::Context::Scope context_scope(ctx);
+
+    v8::Local<v8::Object> glob = ctx->Global();
+    v8::Local<v8::ObjectTemplate> consoleTemplate = v8::ObjectTemplate::New(isolate);
+    v8::Local<v8::Object> console = consoleTemplate->NewInstance(ctx).ToLocalChecked();
+    glob->Set(ctx, v8::String::NewFromUtf8(isolate, "console").ToLocalChecked(), console).FromJust();
 
     Senkora::Modules::initBuiltinModules(isolate);
 
@@ -159,7 +173,7 @@ int main(int argc, char* argv[]) {
     v8::V8::InitializeICUDefaultLocation(argv[0]);
     v8::V8::InitializeExternalStartupData(argv[0]);
     std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
-    v8::V8::SetFlagsFromString("--disallow-code-generation-from-strings --use-strict true ");
+    v8::V8::SetFlagsFromString("--use-strict true ");
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
 
