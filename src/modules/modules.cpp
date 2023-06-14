@@ -1,5 +1,6 @@
 #include "modules.hpp"
 #include "empty.hpp"
+#include "fs/mod.hpp"
 #include "../../config.h"
 #include "v8-message.h"
 #include "v8-primitive.h"
@@ -103,5 +104,11 @@ namespace Senkora::Modules {
         moduleCache["senkora:__empty"] = createModule(ctx, 
             "senkora:__empty",
             dummy::getExports(isolate), dummy::init).ToLocalChecked();
+
+        #ifdef ENABLE_FS
+        moduleCache["senkora:fs"] = createModule(ctx, 
+            "senkora:fs",
+            fsMod::getExports(isolate), fsMod::init).ToLocalChecked();
+        #endif
     }
 }

@@ -10,7 +10,7 @@ find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(V8 IMPORTED_TARGET REQUIRED v8)
 
-FILE(GLOB SRC ./src/*.cpp ./src/api/*.cpp ./src/modules/*)
+FILE(GLOB_RECURSE SRC ./src/*.cpp ./src/*.c ./src/*.h ./src/*.hpp)
 
 execute_process(COMMAND make 
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libFoxEvents/)
