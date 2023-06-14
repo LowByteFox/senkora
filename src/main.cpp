@@ -80,7 +80,7 @@ void Println(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 // console.*
 void notImplementedFunc(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Not implemented");
+    Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Not implemented yet");
 }
 
 static int lastScriptId = 0;
@@ -123,6 +123,13 @@ void run(std::string nextArg, std::any data) {
 
     v8::Local<v8::Object> glob = ctx->Global();
     v8::Local<v8::ObjectTemplate> consoleTemplate = v8::ObjectTemplate::New(isolate);
+    
+    // wiping console.* for now
+    const char *consoleMethods[] = {"log", "info", "warn", "error", "debug", "trace", "dir", "dirxml", "table", "count", "countReset", "assert", "profile", "profileEnd", "timeLog", "timeEnd", "group", "groupCollapsed", "groupEnd", "clear", "time", "timeStamp", "context"};
+    for (int i = 0; i < 22; i++) {
+        consoleTemplate->Set(isolate, consoleMethods[i], v8::FunctionTemplate::New(isolate, notImplementedFunc));
+    }
+    
     v8::Local<v8::Object> console = consoleTemplate->NewInstance(ctx).ToLocalChecked();
     glob->Set(ctx, v8::String::NewFromUtf8(isolate, "console").ToLocalChecked(), console).FromJust();
 
