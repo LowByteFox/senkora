@@ -112,7 +112,10 @@ void run(std::string nextArg, std::any data) {
     globalObject::AddFunction(isolate, global, "clearTimeout", v8::FunctionTemplate::New(isolate, events::clearTimeout));
     globalObject::AddFunction(isolate, global, "clearImmediate", v8::FunctionTemplate::New(isolate, events::clearImmediate));
     globalObject::AddFunction(isolate, global, "clearInterval", v8::FunctionTemplate::New(isolate, events::clearInterval));
-    // globalObject::AddFunction(isolate, global, "console.log", v8::FunctionTemplate::New(isolate, notImplementedFunc));
+    
+    v8::Local<v8::ObjectTemplate> senkoraObj = v8::ObjectTemplate::New(isolate);
+    senkoraObj->Set(isolate, "version", v8::String::NewFromUtf8(isolate, "0.0.1").ToLocalChecked());
+    global->Set(isolate, "Senkora", senkoraObj);
 
     isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
 
