@@ -1,3 +1,4 @@
 [submodule "libs/libFoxEvents"]
 	path = libs/libFoxEvents
     url = https://github.com/SenkoraJS/libFoxEvents.git
+    ignore = all
