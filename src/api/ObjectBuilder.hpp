@@ -14,6 +14,7 @@ namespace Senkora::Object {
             void Set(const char* name, v8::Local<v8::Value> value);
             void Set(const char* name, v8::Local<v8::FunctionTemplate> value);
             void Set(const char* name, v8::Local<v8::Object> value);
+            v8::Local<v8::Value> Get(const char* name);
             v8::Local<v8::Array> GetKeys(v8::Local<v8::Context> ctx);
 
         private:

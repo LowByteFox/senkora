@@ -16,7 +16,7 @@ namespace Senkora::Object {
 
     void ObjectBuilder::Dissasemble(v8::Local<v8::Object> obj) {
         this->isDissasembled = true;
-        this->dissasembly = obj;
+        this->dissasembly = obj;    
     }
 
     void ObjectBuilder::Set(const char* name, v8::Local<v8::Value> value) {
@@ -44,6 +44,9 @@ namespace Senkora::Object {
         if (!this->isDissasembled) {
             this->obj->Set(isolate, name, value);
             this->keys->Set(ctx, this->keys->Length(), v8::String::NewFromUtf8(isolate, name).ToLocalChecked()).FromJust();
+        } else {
+            Senkora::throwAndPrintException(ctx, "v8::Object doesn't accept v8::FunctionTemplate", Senkora::ExceptionType::TYPE);
+            exit(1);
         }
     }
 
@@ -59,6 +62,18 @@ namespace Senkora::Object {
         } else {
             this->dissasembly->Set(ctx, v8::String::NewFromUtf8(isolate, name).ToLocalChecked(), value).FromJust();
         }
+    }
+
+    v8::Local<v8::Value> ObjectBuilder::Get(const char* name) {
+        v8::Isolate *isolate = this->isolate;
+        v8::Isolate::Scope isolate_scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+        v8::Context::Scope context_scope(ctx);
+
+        if (!this->isDissasembled) {
+            return v8::Undefined(isolate);
+        }
+        else return this->dissasembly->Get(ctx, v8::String::NewFromUtf8(isolate, name).ToLocalChecked()).ToLocalChecked();
     }
 
     v8::Local<v8::Array> ObjectBuilder::GetKeys(v8::Local<v8::Context> ctx) {
