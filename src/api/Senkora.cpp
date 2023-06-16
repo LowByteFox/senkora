@@ -48,6 +48,16 @@ namespace Senkora
         return this->meta;
     }
 
+    void MetadataObject::setScent(Scent *scent)
+    {
+        this->scent = scent;
+    }
+
+    Scent *MetadataObject::getScent()
+    {
+        return this->scent;
+    }
+
     std::string readFile(std::string name)
     {
         std::ifstream file(name);

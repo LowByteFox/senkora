@@ -1,6 +1,7 @@
 #ifndef SENKORA_API
 #define SENKORA_API
 
+#include "Scent.hpp"
 #include "v8-exception.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
@@ -31,11 +32,14 @@ namespace Senkora
     {
     private:
         std::map<std::string, Metadata> meta;
+        Scent *scent;
 
     public:
         void Set(v8::Local<v8::Context> ctx, std::string key, v8::Local<v8::Value> val);
         v8::Local<v8::Value> Get(std::string key);
         std::map<std::string, Metadata> getMeta();
+        void setScent(Scent *scent);
+        Scent *getScent();
     };
 
     std::string readFile(std::string name);

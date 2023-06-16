@@ -76,6 +76,10 @@ namespace Senkora::Modules {
 
         v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
+        Senkora::Scent *scent = new Senkora::Scent();
+        scent->num = mod->ScriptId();
+        meta->setScent(scent);
+
         moduleCache[base] = mod;
 
         moduleMetadatas[mod->ScriptId()] = meta;
