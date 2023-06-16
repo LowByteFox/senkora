@@ -3,40 +3,39 @@
 #include <stdio.h>
 #include <string.h>
 
-int writeToFile(char *filename, unsigned char *data) {
+int writeToFile(char *filename, char *data) {
     FILE *f = fopen(filename, "wb");
+    int size = strlen(data);
 
     if (f == NULL) {
         return 0;
     }
 
-    fwrite(data, sizeof(unsigned char), strlen((char*) data), f);
+    for (int i = 0; i < size; i++) {
+        fputc(data[i], f);
+    }
 
     fclose(f);
 
     return 1;
 }
 
-unsigned char *readFromFile(char *filename) {
+char *readFromFile(char *filename) {
     FILE* f = fopen(filename, "rb");
-    unsigned char *str = (unsigned char*) malloc(sizeof(unsigned char));
+    char *str = malloc(1);
     int len = 1;
-    unsigned char *copy = str;
 
     if (f == NULL) {
         return NULL;
     }
 
     while (!feof(f)) {
-        *copy = fgetc(f);
-        str = (unsigned char*) realloc(str, ++len);
-        copy++;
+        str = realloc(str, len + 1);
+        str[len - 1] = fgetc(f);
+        len++;
     }
+    str[len - 2] = '\0';
+
     fclose(f);
-
-    str = (unsigned char*) realloc(str, ++len);
-    copy++;
-    *copy = 0;
-
     return str;
 }
