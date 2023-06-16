@@ -106,6 +106,9 @@ namespace Senkora
 
     void printException(v8::Local<v8::Context> ctx, v8::Local<v8::Value> exception) {
         v8::Isolate *isolate = ctx->GetIsolate();
+        v8::Isolate::Scope isolate_scope(isolate);
+        v8::HandleScope handle_scope(isolate);
+        v8::Context::Scope context_scope(ctx);
 
         v8::String::Utf8Value str(isolate, exception);
         const char* cstr = ToCString(str);

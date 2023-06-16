@@ -1,4 +1,5 @@
 #include <Senkora.hpp>
+#include <ObjectBuilder.hpp>
 #include "event.hpp"
 #include "globalThis.hpp"
 
@@ -34,6 +35,7 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
+using Senkora::Object::ObjectBuilder;
 
 const char* ToCString(const v8::String::Utf8Value& value) {
     return *value ? *value : "<string conversion failed>";
@@ -124,17 +126,14 @@ void run(std::string nextArg, std::any data) {
     ctx->SetErrorMessageForCodeGenerationFromStrings(v8::String::NewFromUtf8(isolate, "both 'eval' and 'Function' constructor are disabled!").ToLocalChecked());
     v8::Context::Scope context_scope(ctx);
 
-    v8::Local<v8::Object> glob = ctx->Global();
-    v8::Local<v8::ObjectTemplate> consoleTemplate = v8::ObjectTemplate::New(isolate);
-    
-    // wiping console.* for now
+    ObjectBuilder glob = ObjectBuilder(isolate);
+    glob.Dissasemble(ctx->Global());
+    ObjectBuilder console = ObjectBuilder(isolate);
     const char *consoleMethods[] = {"log", "info", "warn", "error", "debug", "trace", "dir", "dirxml", "table", "count", "countReset", "assert", "profile", "profileEnd", "timeLog", "timeEnd", "group", "groupCollapsed", "groupEnd", "clear", "time", "timeStamp", "context"};
     for (int i = 0; i < 22; i++) {
-        consoleTemplate->Set(isolate, consoleMethods[i], v8::FunctionTemplate::New(isolate, notImplementedFunc));
+        console.Set(consoleMethods[i], v8::FunctionTemplate::New(isolate, notImplementedFunc));
     }
-    
-    v8::Local<v8::Object> console = consoleTemplate->NewInstance(ctx).ToLocalChecked();
-    glob->Set(ctx, v8::String::NewFromUtf8(isolate, "console").ToLocalChecked(), console).FromJust();
+    glob.Set("console", console.Assemble(ctx));
 
     Senkora::Modules::initBuiltinModules(isolate);
 
