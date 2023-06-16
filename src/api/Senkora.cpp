@@ -1,4 +1,5 @@
 #include "Senkora.hpp"
+#include <v8.h>
 #include "v8-context.h"
 #include "v8-debug.h"
 #include "v8-exception.h"
@@ -8,6 +9,7 @@
 #include "v8-script.h"
 #include "v8-message.h"
 #include "v8-value.h"
+#include <ObjectBuilder.hpp>
 #include <cstdio>
 #include <cstring>
 #include <functional>
@@ -19,6 +21,7 @@
 extern const char* ToCString(const v8::String::Utf8Value& value); 
 extern std::map<int, Senkora::MetadataObject *> moduleMetadatas;
 
+using Senkora::Object::ObjectBuilder;
 namespace fs = std::filesystem;
 
 static int lastScriptId;
@@ -118,6 +121,10 @@ namespace Senkora
             return;
         }
 
+        v8::Local<v8::Object> obj = exception->ToObject(ctx).ToLocalChecked();
+        v8::Local<v8::Value> name = obj->Get(ctx, v8::String::NewFromUtf8(isolate, "name").ToLocalChecked()).ToLocalChecked();
+        v8::String::Utf8Value nameStr(isolate, name);
+
         v8::Local<v8::Message> msg = v8::Exception::CreateMessage(isolate, exception);
         int scriptId = msg->GetScriptOrigin().ScriptId();
         MetadataObject *metadata = moduleMetadatas[scriptId];
@@ -193,6 +200,17 @@ namespace Senkora
         putchar('\n');
 
         printf("=====================================\n");
+
+        // if it is AggregateError, iterate and call itself with the exception
+        if (!strcmp("AggregateError", ToCString(nameStr))) {
+            v8::Local<v8::Value> errors = obj->Get(ctx, v8::String::NewFromUtf8(isolate, "errors").ToLocalChecked()).ToLocalChecked();
+            v8::Local<v8::Array> errorsArray = v8::Local<v8::Array>::Cast(errors);
+            int length = errorsArray->Length();
+            for (int i = 0; i < length; i++) {
+                v8::Local<v8::Value> error = errorsArray->Get(ctx, i).ToLocalChecked();
+                printException(ctx, error);
+            }
+        }
     }
 
     void throwAndPrintException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type) {

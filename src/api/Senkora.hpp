@@ -19,13 +19,13 @@ namespace Senkora
         v8::Local<v8::Value> value;
     } Metadata;
 
-    typedef enum {
+    enum class ExceptionType {
         RANGE = 1,
         REFERENCE,
         SYNTAX,
         TYPE,
         ERROR
-    } ExceptionType;
+    };
 
     class MetadataObject
     {
@@ -48,10 +48,10 @@ namespace Senkora
         v8::Module::SyntheticModuleEvaluationSteps step
     );
 
-    v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ERROR);
+    v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ExceptionType::ERROR);
 
     void printException(v8::Local<v8::Context> ctx, v8::Local<v8::Value> exception);
 
-    void throwAndPrintException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ERROR);
+    void throwAndPrintException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ExceptionType::ERROR);
 }
 #endif

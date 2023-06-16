@@ -9,6 +9,7 @@
 
 
 function crash() {
-    throw new Error("World");
+    throw new AggregateError([new Error("World"), new AggregateError([new Error("World2")], "msg2")], "msg");
 }
+
 crash();
