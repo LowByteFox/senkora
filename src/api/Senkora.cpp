@@ -187,7 +187,7 @@ namespace Senkora
         for (int i = 0; i < col; i++) {
             putchar(' ');
         }
-        for (int i = col; i < msg->GetEndColumn(); i++) {
+        for (int i = col; i < msg->; i++) {
             putchar('^');
         }
         putchar('\n');
