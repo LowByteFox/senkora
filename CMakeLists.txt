@@ -15,9 +15,12 @@ FILE(GLOB_RECURSE SRC ./src/*.cpp ./src/*.c ./src/*.h ./src/*.hpp)
 execute_process(COMMAND make 
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libFoxEvents/)
 
+add_library(toml STATIC ./libs/tomlc99/toml.h ./libs/tomlc99/toml.c)
+
 link_directories(${V8_LIBRARY_DIRS})
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libFoxEvents/)
 include_directories(./src/api/)
+include_directories(./libs/tomlc99/)
 include_directories(./libs/libFoxEvents/src/)
 
 add_executable(senkora ${SRC})
