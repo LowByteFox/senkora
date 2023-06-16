@@ -82,7 +82,7 @@ void Println(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 // console.*
 void notImplementedFunc(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Not implemented yet");
+    Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Not implemented yet", Senkora::ExceptionType::REFERENCE);
 }
 
 static int lastScriptId = 0;

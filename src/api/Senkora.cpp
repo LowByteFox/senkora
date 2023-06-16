@@ -125,13 +125,14 @@ namespace Senkora
         int line = msg->GetLineNumber(ctx).FromJust();
         int col = msg->GetStartColumn(ctx).FromJust();
 
+        printf("-------------------------------------\n");
         if (!metadata) {
-            printf("%s:%d:%d: %s\n", "Wrong ScriptID?", line, col, cstr);
+            printf("%s\n", cstr);
         } else {
             v8::Local<v8::Value> filename = metadata->Get("url");
             v8::String::Utf8Value filenameStr(isolate, filename);
             fs::path path = fs::path(ToCString(filenameStr));
-            printf("%s:%d:%d: %s\n", path.filename().c_str(), line, col, cstr);
+            printf("[%s:%d:%d] %s\n", path.filename().c_str(), line, col, cstr);
         }
 
         v8::Local<v8::StackTrace> stack = msg->GetStackTrace();
@@ -147,14 +148,51 @@ namespace Senkora
                 v8::String::Utf8Value filenameStr(isolate, filename);
                 fs::path path = fs::path(ToCString(filenameStr));
                 if (funcName.IsEmpty()) {
-                    printf("\tat %s (%d:%d)\n", path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
+                    printf("    at %s [%d:%d]\n", path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
                 } else {
                     v8::String::Utf8Value funcNameStr(isolate, funcName);
-                    printf("\tat %s (%s:%d:%d)\n", path.filename().c_str(), ToCString(funcNameStr), frame->GetLineNumber(), frame->GetColumn());
+                    printf("    at %s() [%s:%d:%d]\n", ToCString(funcNameStr), path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
                 }
             } else {
             }
         }
+        printf("=====================================\n");
+        // code
+        if (col == -1) return;
+        if (!metadata) return;
+
+        v8::MaybeLocal<v8::String> maybeSource = msg->GetSource(ctx);
+        if (maybeSource.IsEmpty()) return;
+
+        v8::Local<v8::String> source = maybeSource.ToLocalChecked();
+        v8::String::Utf8Value sourceStr(isolate, source);
+        int startLine = line - 5;
+        if (startLine < 0) startLine = 0;
+
+        std::vector<std::string> lines;
+        std::stringstream f(*sourceStr);
+        std::string lineStr;
+        while (std::getline(f, lineStr, '\n')) {
+            lines.push_back(lineStr);
+        }
+
+        char buff[12];
+        sprintf(buff, "%d", line);
+        int width = strlen(buff);
+
+        for (int i = startLine; i < line; i++) {
+            printf("%*d |%s\n", width, i + 1, lines[i].c_str());
+        }
+        printf("%*c |", width, ' ');
+        for (int i = 0; i < col; i++) {
+            putchar(' ');
+        }
+        for (int i = col; i < msg->GetEndColumn(); i++) {
+            putchar('^');
+        }
+        putchar('\n');
+
+        printf("=====================================\n");
     }
 
     void throwAndPrintException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type) {

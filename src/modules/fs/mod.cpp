@@ -34,7 +34,7 @@ namespace fsMod {
 
         v8::Local<v8::String> path = args[0]->ToString(ctx).ToLocalChecked();
         v8::Local<v8::String> content = args[1]->ToString(ctx).ToLocalChecked();
-        // to char * both
+        
         v8::String::Utf8Value pathUtf8(isolate, path);
         v8::String::Utf8Value contentUtf8(isolate, content);
 

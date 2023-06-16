@@ -1,9 +1,18 @@
 println("Hello, ");
 
-function xd() {
-    console.log("World");
-    // throw new Error("World");
+
+
+
+
+
+
+
+
+
+function crash() {
+    // console.log("World");
+    throw new Error("World");
 }
-xd();
+crash();
 
 println("World");
