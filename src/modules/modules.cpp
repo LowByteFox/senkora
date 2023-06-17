@@ -1,6 +1,7 @@
 #include "modules.hpp"
 #include "empty.hpp"
 #include "fs/mod.hpp"
+#include "toml/mod.hpp"
 #include "../../config.h"
 #include "v8-message.h"
 #include "v8-primitive.h"
@@ -113,6 +114,12 @@ namespace Senkora::Modules {
         moduleCache["senkora:fs"] = createModule(ctx, 
             "senkora:fs",
             fsMod::getExports(isolate), fsMod::init).ToLocalChecked();
+        #endif
+
+        #ifdef ENABLE_TOML
+        moduleCache["senkora:toml"] = createModule(ctx,
+            "senkora:toml",
+            tomlMod::getExports(isolate), tomlMod::init).ToLocalChecked();
         #endif
     }
 }

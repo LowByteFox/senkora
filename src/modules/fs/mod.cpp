@@ -87,6 +87,6 @@ namespace fsMod {
         val = v8::FunctionTemplate::New(isolate, readFromFileJS)->GetFunction(ctx).ToLocalChecked();
         fine = mod->SetSyntheticModuleExport(isolate, name, val);
 
-        return v8::Boolean::New(ctx->GetIsolate(), true);
+        return v8::Boolean::New(isolate, true);
     }
 }
