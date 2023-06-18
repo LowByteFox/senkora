@@ -18,17 +18,14 @@
 #include <fstream>
 #include <filesystem>
 
-extern const char* ToCString(const v8::String::Utf8Value& value); 
-extern std::map<int, Senkora::MetadataObject *> moduleMetadatas;
+extern const Senkora::SharedGlobals globals;
 
 using Senkora::Object::ObjectBuilder;
 namespace fs = std::filesystem;
 
-static int lastScriptId;
-
 namespace Senkora
 {
-    void MetadataObject::Set(v8::Local<v8::Context> ctx, std::string key, v8::Local<v8::Value> val)
+    void MetadataObject::Set(v8::Local<v8::Context> ctx, const std::string& key, v8::Local<v8::Value> val)
     {
         v8::Isolate *isolate = ctx->GetIsolate();
 
@@ -37,7 +34,7 @@ namespace Senkora
             .value = val};
     }
 
-    v8::Local<v8::Value> MetadataObject::Get(std::string key)
+    v8::Local<v8::Value> MetadataObject::Get(const std::string& key)
     {
         Metadata meta = this->meta[key];
         return meta.value;
@@ -81,8 +78,8 @@ namespace Senkora
 
         v8::ScriptOrigin origin(isolate,
                 v8::Local<v8::Integer>(),
-                0, 0, false, lastScriptId, v8::Local<v8::Value>(), false, false, true);
-        lastScriptId++;
+                0, 0, false, globals.lastScriptId, v8::Local<v8::Value>(), false, false, true);
+        globals.lastScriptId++;
 
         v8::ScriptCompiler::Source source(v8::String::NewFromUtf8(isolate, code.c_str()).ToLocalChecked(), origin);
 
@@ -124,7 +121,7 @@ namespace Senkora
         v8::Context::Scope context_scope(ctx);
 
         v8::String::Utf8Value str(isolate, exception);
-        const char* cstr = ToCString(str);
+        const char* cstr = *str;
 
         if (!exception->IsNativeError()) {
             printf("Error: %s\n", cstr);
@@ -137,7 +134,7 @@ namespace Senkora
 
         v8::Local<v8::Message> msg = v8::Exception::CreateMessage(isolate, exception);
         int scriptId = msg->GetScriptOrigin().ScriptId();
-        MetadataObject *metadata = moduleMetadatas[scriptId];
+        MetadataObject *metadata = globals.moduleMetadatas[scriptId];
 
         int line = msg->GetLineNumber(ctx).FromJust();
         int col = msg->GetStartColumn(ctx).FromJust();
@@ -148,7 +145,7 @@ namespace Senkora
         } else {
             v8::Local<v8::Value> filename = metadata->Get("url");
             v8::String::Utf8Value filenameStr(isolate, filename);
-            fs::path path = fs::path(ToCString(filenameStr));
+            fs::path path = fs::path(*filenameStr);
             printf("[%s:%d:%d] %s\n", path.filename().c_str(), line, col, cstr);
         }
 
@@ -159,16 +156,16 @@ namespace Senkora
             v8::Local<v8::StackFrame> frame = stack->GetFrame(isolate, i);
             v8::Local<v8::String> funcName = frame->GetFunctionName();
             int id = frame->GetScriptId();
-            MetadataObject *metadata = moduleMetadatas[id];
+            MetadataObject *metadata = globals.moduleMetadatas[id];
             if (metadata) {
                 v8::Local<v8::Value> filename = metadata->Get("url");
                 v8::String::Utf8Value filenameStr(isolate, filename);
-                fs::path path = fs::path(ToCString(filenameStr));
+                fs::path path = fs::path(*filenameStr);
                 if (funcName.IsEmpty()) {
                     printf("    at %s [%d:%d]\n", path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
                 } else {
                     v8::String::Utf8Value funcNameStr(isolate, funcName);
-                    printf("    at %s() [%s:%d:%d]\n", ToCString(funcNameStr), path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
+                    printf("    at %s() [%s:%d:%d]\n", *funcNameStr, path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
                 }
             } else {
             }
@@ -212,7 +209,7 @@ namespace Senkora
         printf("=====================================\n");
 
         // if it is AggregateError, iterate and call itself with the exception
-        if (!strcmp("AggregateError", ToCString(nameStr))) {
+        if (!strcmp("AggregateError", *nameStr)) {
             v8::Local<v8::Value> errors = obj->Get(ctx, v8::String::NewFromUtf8(isolate, "errors").ToLocalChecked()).ToLocalChecked();
             v8::Local<v8::Array> errorsArray = v8::Local<v8::Array>::Cast(errors);
             int length = errorsArray->Length();

@@ -9,8 +9,6 @@ extern "C" {
 #include <v8.h>
 #include <Senkora.hpp>
 
-
-extern std::map<int, Senkora::MetadataObject *> moduleMetadatas;
 namespace fsMod {
     void writeToFileJS(const v8::FunctionCallbackInfo<v8::Value>& args) {
         v8::Isolate *isolate = args.GetIsolate();

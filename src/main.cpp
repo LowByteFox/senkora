@@ -35,6 +35,7 @@
 #include <filesystem>
 #include <memory>
 
+
 namespace fs = std::filesystem;
 using Senkora::Object::ObjectBuilder;
 
@@ -86,9 +87,7 @@ void notImplementedFunc(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Senkora::throwException(args.GetIsolate()->GetCurrentContext(), "Not implemented yet", Senkora::ExceptionType::REFERENCE);
 }
 
-static int lastScriptId = 0;
-std::map<int, Senkora::MetadataObject*> moduleMetadatas;
-std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
+inline const Senkora::SharedGlobals globals;
 
 extern events::EventLoop *globalLoop;
 
@@ -156,8 +155,8 @@ void run(std::string nextArg, std::any data) {
     scent->num = 5454;
     meta->setScent(scent.get());
 
-    moduleCache[filePath] = mod;
-    moduleMetadatas[mod->ScriptId()] = meta.get();
+    globals.moduleCache[filePath] = mod;
+    globals.moduleMetadatas[mod->ScriptId()] = meta.get();
 
     v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
 

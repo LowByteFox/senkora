@@ -9,13 +9,11 @@
 #include <v8-context.h>
 #include <v8-script.h>
 #include <v8-value.h>
-
 #include <string>
 
-namespace Senkora
-{
-    typedef struct
-    {
+namespace Senkora {
+
+    typedef struct {
         v8::Local<v8::Name> key;
         v8::Local<v8::Value> value;
     } Metadata;
@@ -28,19 +26,24 @@ namespace Senkora
         ERROR
     };
 
-    class MetadataObject
-    {
-    private:
-        std::map<std::string, Metadata> meta;
-        Scent *scent;
+    class MetadataObject {
+        private:
+            std::map<std::string, Metadata> meta;
+            Scent *scent;
 
-    public:
-        void Set(v8::Local<v8::Context> ctx, std::string key, v8::Local<v8::Value> val);
-        v8::Local<v8::Value> Get(std::string key);
-        std::map<std::string, Metadata> getMeta();
-        void setScent(Scent *scent);
-        Scent *getScent();
+        public:
+            void Set(v8::Local<v8::Context> ctx, const std::string& key, v8::Local<v8::Value> val);
+            v8::Local<v8::Value> Get(const std::string& key);
+            std::map<std::string, Metadata> getMeta();
+            void setScent(Scent *scent);
+            Scent *getScent();
     };
+
+    typedef struct {
+        mutable int lastScriptId = 0;
+        mutable std::map<int, MetadataObject*> moduleMetadatas;
+        mutable std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
+    } SharedGlobals;
 
     std::string readFile(std::string name);
     v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, std::string code);
