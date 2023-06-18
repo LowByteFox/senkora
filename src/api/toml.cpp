@@ -40,14 +40,14 @@ namespace Senkora::TOML {
         return node;
     }
     
-    std::unique_ptr<TomlNode> handleArray(const toml_array_t *arr) {
+    std::unique_ptr<TomlNode> handleArray(toml_array_t *arr) {
         auto node = std::make_unique<TomlNode>();
+        node->type = TomlTypes::TOML_ARRAY;
         const char *raw;
-        const toml_array_t *arr2;
-        const toml_table_t *tab;
+        toml_array_t *arr2;
+        toml_table_t *tab;
 
         if (toml_array_kind(arr) == 't') {
-            node->type = TomlTypes::TOML_ARRAY;
             for (int i = 0; (tab = toml_table_at(arr, i)); i++) {
                 auto tmp = handleTable(tab);
                 node->value.a.push_back(std::move(tmp));
@@ -73,28 +73,40 @@ namespace Senkora::TOML {
         return node;
     }
 
-    std::unique_ptr<TomlNode> handleTable(const toml_table_t *table) {
+    std::unique_ptr<TomlNode> handleTable(toml_table_t *table) {
         auto node = std::make_unique<TomlNode>();
         node->type = TomlTypes::TOML_TABLE;
 
         const char *key;
         const char *raw;
-        const toml_array_t *arr;
-        const toml_table_t *tab;
+        toml_array_t *arr;
+        toml_table_t *tab;
 
         for (int i = 0; (key = toml_key_in(table, i)); i++) {
             if ((raw = toml_raw_in(table, key))) {
                 auto tmp = handleRaw(raw);
                 tmp->key = std::string_view(key);
-                node->value.t.try_emplace(key, std::move(tmp));
+                if (node->type == TomlTypes::TOML_TABLE) {
+                    node->value.t.try_emplace(key, std::move(tmp));
+                } else {
+                    node->value.a.push_back(std::move(tmp));
+                }
             } else if ((arr = toml_array_in(table, key))) {
                 auto tmp = handleArray(arr);
                 tmp->key = std::string_view(key);
-                node->value.a.push_back(std::move(tmp));
+                if (node->type == TomlTypes::TOML_TABLE) {
+                    node->value.t.try_emplace(key, std::move(tmp));
+                } else {
+                    node->value.a.push_back(std::move(tmp));
+                }
             } else if ((tab = toml_table_in(table, key))) {
                 auto tmp = handleTable(tab);
                 tmp->key = std::string(key);
-                node->value.t.try_emplace(key, std::move(tmp));
+                if (node->type == TomlTypes::TOML_TABLE) {
+                    node->value.t.try_emplace(key, std::move(tmp));
+                } else {
+                    node->value.a.push_back(std::move(tmp));
+                }
             }
         }
 
@@ -102,40 +114,8 @@ namespace Senkora::TOML {
     }
 
     std::unique_ptr<TomlNode> parse(char* toml) {
-        const toml_table_t *tbl = toml_parse(toml, nullptr, 0);
+        toml_table_t *tbl = toml_parse(toml, nullptr, 0);
         
         return handleTable(tbl);
-    }
-
-    void printTomlNode(TomlNode const &node, int indent) {
-        switch (node.type) {
-            using enum Senkora::TOML::TomlTypes;
-            case TOML_STRING:
-                printf("%s = \"%s\"\n", node.key.c_str(), node.value.s.c_str());
-                break;
-            case TOML_INT:
-                std::cout << node.value.i;
-                break;
-            case TOML_FLOAT:
-                std::cout << node.value.f;
-                break;
-            case TOML_BOOL:
-                std::cout << (node.value.b ? "true" : "false");
-                break;
-            case TOML_TABLE:
-                for (const auto& [key, value] : node.value.t) {
-                    printTomlNode(*value.get(), indent + 2);
-                }
-                break;
-            case TOML_ARRAY:
-                for (const auto& [key, value] : node.value.t) {
-                    printTomlNode(*value.get(), indent + 2);
-                }
-                break;
-            case TOML_DATETIME:
-                break;
-            case TOML_NONE:
-                break;
-        }
     }
 }

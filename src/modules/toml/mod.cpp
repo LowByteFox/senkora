@@ -25,7 +25,6 @@ namespace tomlMod {
         v8::String::Utf8Value pathUtf8(isolate, path);
 
         auto node = Senkora::TOML::parse(*pathUtf8);
-        Senkora::TOML::printTomlNode(*node.get());
 
         args.GetReturnValue().Set(v8::Undefined(isolate));
     }

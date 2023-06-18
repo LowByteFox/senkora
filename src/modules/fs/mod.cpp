@@ -61,7 +61,9 @@ namespace fsMod {
         v8::Local<v8::String> path = args[0]->ToString(ctx).ToLocalChecked();
         v8::String::Utf8Value pathUtf8(isolate, path);
 
-        args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, *pathUtf8).ToLocalChecked());
+        std::string content = readFromFile(*pathUtf8);
+
+        args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, content.c_str()).ToLocalChecked());
     }
 
     std::vector<v8::Local<v8::String>> getExports(v8::Isolate *isolate) {

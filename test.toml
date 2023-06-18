@@ -1,2 +1,6 @@
 [config]
-something = ["ahoj", "cau"]
+something = "ahoj"
+daco = [{ a = 1, b = 2 }, { a = 3, b = 4}]
+
+[config.nested]
+something = [ [1, 2], [3, 4] ]

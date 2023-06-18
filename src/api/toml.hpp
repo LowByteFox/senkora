@@ -37,13 +37,12 @@ namespace Senkora::TOML {
     };
 
     // don't use these
-    std::unique_ptr<TomlNode> handleTable(const toml_table_t *table);
-    std::unique_ptr<TomlNode> handleArray(const toml_array_t *arr);
-    std::unique_ptr<TomlNode> handleRaw(const char *raw);
+    std::unique_ptr<TomlNode> handleTable(toml_table_t *table);
+    std::unique_ptr<TomlNode> handleArray(toml_array_t *arr);
+    std::unique_ptr<TomlNode> handleRaw(char *raw);
 
     // only these
     std::unique_ptr<TomlNode> parse(char *toml);
-    void printTomlNode(TomlNode const &node, int indent = 0);
 }
 
 #endif
