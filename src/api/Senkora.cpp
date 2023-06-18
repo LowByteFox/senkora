@@ -34,9 +34,9 @@ namespace Senkora
             .value = val};
     }
 
-    void MetadataObject::setScent(Scent *scnt)
+    void MetadataObject::setScent(std::unique_ptr<Scent> scnt)
     {
-        this->scent = scnt;
+        this->scent = std::move(scnt);
     }
 
     v8::Local<v8::Value> MetadataObject::Get(const std::string& key) {
@@ -47,9 +47,9 @@ namespace Senkora
         return this->meta;
     }
 
-    Scent *MetadataObject::getScent()
+    std::unique_ptr<Scent> MetadataObject::getScent()
     {
-        return this->scent;
+        return std::move(this->scent);
     }
 
     std::string readFile(const std::string& name)
@@ -89,16 +89,17 @@ namespace Senkora
         v8::Local<v8::String> str = v8::String::NewFromUtf8(isolate, message).ToLocalChecked();
 
         switch (type) {
-            case ExceptionType::RANGE:
+            using enum Senkora::ExceptionType;
+            case RANGE:
                 err = v8::Exception::RangeError(str);
                 break;
-            case ExceptionType::REFERENCE:
+            case REFERENCE:
                 err = v8::Exception::ReferenceError(str);
                 break;
-            case ExceptionType::SYNTAX:
+            case SYNTAX:
                 err = v8::Exception::SyntaxError(str);
                 break;
-            case ExceptionType::TYPE:
+            case TYPE:
                 err = v8::Exception::TypeError(str);
                 break;
             default:
@@ -131,7 +132,7 @@ namespace Senkora
 
         v8::Local<v8::Message> msg = v8::Exception::CreateMessage(isolate, exception);
         int scriptId = msg->GetScriptOrigin().ScriptId();
-        MetadataObject *metadata = globals.moduleMetadatas[scriptId];
+        const auto& metadata = globals.moduleMetadatas[scriptId];
 
         int line = msg->GetLineNumber(ctx).FromJust();
         int col = msg->GetStartColumn(ctx).FromJust();
@@ -153,7 +154,7 @@ namespace Senkora
             v8::Local<v8::StackFrame> frame = stack->GetFrame(isolate, i);
             v8::Local<v8::String> funcName = frame->GetFunctionName();
             int id = frame->GetScriptId();
-            auto tempMetadata = globals.moduleMetadatas[id];
+            const auto& tempMetadata = globals.moduleMetadatas[id];
             if (tempMetadata) {
                 v8::Local<v8::Value> filename = tempMetadata->Get("url");
                 v8::String::Utf8Value filenameStr(isolate, filename);

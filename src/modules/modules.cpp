@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <memory>
 
 namespace fs = std::filesystem;
 
@@ -23,11 +24,10 @@ extern const Senkora::SharedGlobals globals;
 
 namespace Senkora::Modules {
     void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta) {
-        const Senkora::MetadataObject *obj = globals.moduleMetadatas[mod->ScriptId()];
+        const auto& obj = globals.moduleMetadatas[mod->ScriptId()];
         auto modMeta = obj->getMeta();
-        for (auto it = modMeta.begin(); it != modMeta.end(); it++)
-        {
-            v8::Maybe<bool> out = meta->CreateDataProperty(ctx, it->second.key, it->second.value);
+        for (const auto& [key, value]: modMeta) {
+            v8::Maybe<bool> out = meta->CreateDataProperty(ctx, value.key, value.value);
             if (!out.ToChecked())
                 return;
         }
@@ -42,7 +42,7 @@ namespace Senkora::Modules {
         v8::String::Utf8Value val(ctx->GetIsolate(), specifier);
         std::string name(*val);
 
-        Senkora::MetadataObject *obj = globals.moduleMetadatas[ref->ScriptId()];
+        const auto& obj = globals.moduleMetadatas[ref->ScriptId()];
         v8::String::Utf8Value val2(ctx->GetIsolate(), obj->Get("url"));
         std::string urlPath(*val2);
 
@@ -50,7 +50,7 @@ namespace Senkora::Modules {
 
         if (!base.compare(0, 8, "senkora:"))
         {
-            if (globals.moduleCache.find(base) == globals.moduleCache.end()) {
+            if (!globals.moduleCache.contains(base)) {
                 std::string msg = "Module \"";
                 msg += base.c_str();
                 msg += "\" was not found!";
@@ -67,27 +67,27 @@ namespace Senkora::Modules {
             base = fs::path(base).lexically_normal();
         }
 
-        if (globals.moduleCache.find(base) != globals.moduleCache.end())
+        if (globals.moduleCache.contains(base))
         {
             return globals.moduleCache[base];
         }
 
         std::string code = Senkora::readFile(base);
 
-        auto meta = new Senkora::MetadataObject();
+        auto meta = std::make_unique<Senkora::MetadataObject>();
         v8::Local<v8::Value> url = v8::String::NewFromUtf8(ctx->GetIsolate(), base.c_str()).ToLocalChecked();
 
         meta->Set(ctx, "url", url);
 
         v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
-        auto scent = new Senkora::Scent();
+        auto scent = std::make_unique<Senkora::Scent>();
         scent->num = mod->ScriptId();
-        meta->setScent(scent);
+        meta->setScent(std::move(scent));
 
         globals.moduleCache[base] = mod;
 
-        globals.moduleMetadatas[mod->ScriptId()] = meta;
+        globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
         return mod;
     }

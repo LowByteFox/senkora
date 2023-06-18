@@ -11,6 +11,7 @@
 #include <v8-script.h>
 #include <v8-value.h>
 #include <string>
+#include <memory>
 
 namespace Senkora {
 
@@ -30,20 +31,20 @@ namespace Senkora {
     class MetadataObject {
         private:
             std::map<std::string_view, Metadata> meta;
-            Scent *scent;
+            std::unique_ptr<Scent> scent;
 
         public:
             void Set(v8::Local<v8::Context> ctx, const std::string& key, v8::Local<v8::Value> val);
             v8::Local<v8::Value> Get(const std::string& key);
             std::map<std::string_view, Metadata> getMeta() const;
-            void setScent(Scent *scent);
-            Scent *getScent();
+            void setScent(std::unique_ptr<Scent> scnt);
+            std::unique_ptr<Scent> getScent();
     };
 
     typedef struct {
         mutable int lastScriptId = 0;
         mutable int restId = 1;
-        mutable std::map<int, MetadataObject*> moduleMetadatas;
+        mutable std::map<int, std::unique_ptr<MetadataObject>> moduleMetadatas;
         mutable std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
         mutable events::EventLoop *globalLoop = events::Init();
     } SharedGlobals;

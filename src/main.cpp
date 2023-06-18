@@ -148,17 +148,17 @@ void run(std::string nextArg, std::any data) {
     v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
     auto scent = std::make_unique<Senkora::Scent>();
-    scent->num = 5454;
-    meta->setScent(scent.get());
+    meta->setScent(std::move(scent));
 
     globals.moduleCache[filePath.c_str()] = mod;
-    globals.moduleMetadatas[mod->ScriptId()] = meta.get();
+    globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
-    v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
+    if (v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver); out.IsNothing() || !out.FromJust()) {
+        Senkora::printException(ctx, mod->GetException());
+        exit(1);
+    }
 
-    v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx);
-
-    if (mod->GetStatus() == v8::Module::kErrored) {
+    if (v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx); mod->GetStatus() == v8::Module::kErrored && res.IsEmpty()) {
         Senkora::printException(ctx, mod->GetException());
         exit(1);
     }
@@ -199,6 +199,5 @@ int main(int argc, char* argv[]) {
     isolate->Dispose();
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();
-    delete create_params.array_buffer_allocator;
     return 0;
 }

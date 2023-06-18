@@ -12,7 +12,7 @@ void ArgHandler::run() {
     }
 
     for (int i = 1; i < this->argc; i++) {
-        if (this->funcs.find(this->argv[i]) != this->funcs.end()) {
+        if (this->funcs.contains(this->argv[i])) {
             if (i + 1 != this->argc) {
                 this->funcs[this->argv[i]](this->argv[i + 1], this->extraDatas[this->argv[i]]);
             } else this->funcs[this->argv[i]]("", this->extraDatas[this->argv[i]]);

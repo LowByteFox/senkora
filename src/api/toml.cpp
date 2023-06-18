@@ -9,6 +9,7 @@
 
 namespace Senkora::TOML {
     std::unique_ptr<TomlNode> handleRaw(const char *raw) {
+        using enum Senkora::TOML::TomlTypes;
         auto node = std::make_unique<TomlNode>();
         char *sval;
         int64_t ival;
@@ -18,22 +19,22 @@ namespace Senkora::TOML {
         char dbuf[100];
 
         if (!toml_rtos(raw, &sval)) {
-            node->type = TomlTypes::TOML_STRING;
+            node->type = TOML_STRING;
             node->value.s = std::string(sval);
         } else if (!toml_rtoi(raw, &ival)) {
-            node->type = TomlTypes::TOML_INT;
+            node->type = TOML_INT;
             node->value.i = ival;
         } else if (!toml_rtob(raw, &bval)) {
-            node->type = TomlTypes::TOML_BOOL;
+            node->type = TOML_BOOL;
             node->value.b = bval;
         } else if (!toml_rtod_ex(raw, &dval, dbuf, sizeof(dbuf))) {
-            node->type = TomlTypes::TOML_FLOAT;
+            node->type = TOML_FLOAT;
             node->value.f = dval;
         } else if (!toml_rtots(raw, &ts)) {
-            node->type = TomlTypes::TOML_DATETIME;
+            node->type = TOML_DATETIME;
             node->value.d = ts;
         } else {
-            node->type = TomlTypes::TOML_NONE;
+            node->type = TOML_NONE;
         }
 
         return node;
@@ -108,31 +109,32 @@ namespace Senkora::TOML {
 
     void printTomlNode(TomlNode const &node, int indent) {
         switch (node.type) {
-            case TomlTypes::TOML_STRING:
+            using enum Senkora::TOML::TomlTypes;
+            case TOML_STRING:
                 printf("%s = \"%s\"\n", node.key.c_str(), node.value.s.c_str());
                 break;
-            case TomlTypes::TOML_INT:
+            case TOML_INT:
                 std::cout << node.value.i;
                 break;
-            case TomlTypes::TOML_FLOAT:
+            case TOML_FLOAT:
                 std::cout << node.value.f;
                 break;
-            case TomlTypes::TOML_BOOL:
+            case TOML_BOOL:
                 std::cout << (node.value.b ? "true" : "false");
                 break;
-            case TomlTypes::TOML_TABLE:
-                for (auto start = node.value.t.begin(); start != node.value.t.end(); start++) {
-                    printTomlNode(*start->second.get(), indent + 2);
+            case TOML_TABLE:
+                for (const auto& [key, value] : node.value.t) {
+                    printTomlNode(*value.get(), indent + 2);
                 }
                 break;
-            case TomlTypes::TOML_ARRAY:
-                for (auto start = node.value.a.begin(); start != node.value.a.end(); start++) {
-                    printTomlNode(*(*start).get(), indent + 2);
+            case TOML_ARRAY:
+                for (const auto& [key, value] : node.value.t) {
+                    printTomlNode(*value.get(), indent + 2);
                 }
                 break;
-            case TomlTypes::TOML_DATETIME:
+            case TOML_DATETIME:
                 break;
-            case TomlTypes::TOML_NONE:
+            case TOML_NONE:
                 break;
         }
     }
