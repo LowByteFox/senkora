@@ -33,6 +33,7 @@
 #include <string.h>
 #include <vector>
 #include <filesystem>
+#include <memory>
 
 namespace fs = std::filesystem;
 using Senkora::Object::ObjectBuilder;
@@ -87,7 +88,7 @@ void notImplementedFunc(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 static int lastScriptId = 0;
 std::map<int, Senkora::MetadataObject*> moduleMetadatas;
-std::map<std::string, v8::Local<v8::Module>> moduleCache;
+std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
 
 extern events::EventLoop *globalLoop;
 
@@ -144,19 +145,19 @@ void run(std::string nextArg, std::any data) {
     }
     
     std::string code = Senkora::readFile(filePath);
-    Senkora::MetadataObject *meta = new Senkora::MetadataObject();
+    auto meta = std::make_unique<Senkora::MetadataObject>();
     v8::Local<v8::Value> url = v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked();
 
     meta->Set(ctx, "url", url);
 
     v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
-    Senkora::Scent *scent = new Senkora::Scent();
+    auto scent = std::make_unique<Senkora::Scent>();
     scent->num = 5454;
-    meta->setScent(scent);
+    meta->setScent(scent.get());
 
     moduleCache[filePath] = mod;
-    moduleMetadatas[mod->ScriptId()] = meta;
+    moduleMetadatas[mod->ScriptId()] = meta.get();
 
     v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
 
@@ -170,7 +171,7 @@ void run(std::string nextArg, std::any data) {
     events::Run(globalLoop);
 }
 
-void ArgHandler::printHelp() {
+void ArgHandler::printHelp() const {
     printf(R"(Senkora - the JavaScript runtime for the modern age
 
 Usage: senkora [OPTIONS] [ARGS]

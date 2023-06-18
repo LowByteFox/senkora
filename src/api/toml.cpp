@@ -5,10 +5,11 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <memory>
 
 namespace Senkora::TOML {
-    TomlNode *handleRaw(const char *raw) {
-        TomlNode *node = new TomlNode();
+    std::unique_ptr<TomlNode> handleRaw(const char *raw) {
+        auto node = std::make_unique<TomlNode>();
         char *sval;
         int64_t ival;
         int bval;
@@ -38,18 +39,17 @@ namespace Senkora::TOML {
         return node;
     }
     
-    TomlNode *handleArray(toml_array_t *arr) {
-        TomlNode *node = new TomlNode();
+    std::unique_ptr<TomlNode> handleArray(const toml_array_t *arr) {
+        auto node = std::make_unique<TomlNode>();
         const char *raw;
-        toml_array_t *arr2;
-        int arrSize = toml_array_nelem(arr);
-        toml_table_t *tab;
+        const toml_array_t *arr2;
+        const toml_table_t *tab;
 
         if (toml_array_kind(arr) == 't') {
             node->type = TomlTypes::TOML_ARRAY;
             for (int i = 0; (tab = toml_table_at(arr, i)); i++) {
-                TomlNode *tmp = handleTable(tab);
-                node->value.a.push_back(tmp);
+                auto tmp = handleTable(tab);
+                node->value.a.push_back(std::move(tmp));
             }
             return node;
         }
@@ -57,9 +57,7 @@ namespace Senkora::TOML {
         switch (toml_array_kind(arr)) {
             case 'v':
                 for (int i = 0; (raw = toml_raw_at(arr, i)); i++) {
-                    if ((raw = toml_raw_at(arr, i))) {
-                        node->value.a.push_back(handleRaw(raw));
-                    }
+                    node->value.a.push_back(handleRaw(raw));
                 }
                 break;
             case 'a':
@@ -67,69 +65,74 @@ namespace Senkora::TOML {
                     node->value.a.push_back(handleArray(arr2));
                 }
                 break;
+            default:
+                break;
         }
 
         return node;
     }
 
-    TomlNode *handleTable(toml_table_t *table) {
-        TomlNode *node = new TomlNode();
+    std::unique_ptr<TomlNode> handleTable(const toml_table_t *table) {
+        auto node = std::make_unique<TomlNode>();
         node->type = TomlTypes::TOML_TABLE;
 
         const char *key;
         const char *raw;
-        toml_array_t *arr;
-        toml_table_t *tab;
+        const toml_array_t *arr;
+        const toml_table_t *tab;
 
         for (int i = 0; (key = toml_key_in(table, i)); i++) {
             if ((raw = toml_raw_in(table, key))) {
-                TomlNode *tmp = handleRaw(raw);
-                tmp->key = std::string(key);
-                node->value.t[key] = tmp;
+                auto tmp = handleRaw(raw);
+                tmp->key = std::string_view(key);
+                node->value.t.try_emplace(key, std::move(tmp));
             } else if ((arr = toml_array_in(table, key))) {
-                TomlNode *tmp = handleArray(arr);
-                tmp->key = std::string(key);
-                node->value.a.push_back(tmp);
+                auto tmp = handleArray(arr);
+                tmp->key = std::string_view(key);
+                node->value.a.push_back(std::move(tmp));
             } else if ((tab = toml_table_in(table, key))) {
-                TomlNode *tmp = handleTable(tab);
+                auto tmp = handleTable(tab);
                 tmp->key = std::string(key);
-                node->value.t[key] = tmp;
+                node->value.t.try_emplace(key, std::move(tmp));
             }
         }
 
         return node;
     }
 
-    TomlNode *parse(std::string toml) {
-        toml_table_t *tbl = toml_parse((char *) toml.c_str(), nullptr, 0);
+    std::unique_ptr<TomlNode> parse(char* toml) {
+        const toml_table_t *tbl = toml_parse(toml, nullptr, 0);
         
         return handleTable(tbl);
     }
 
-    void printTomlNode(TomlNode *node, int indent) {
-        switch (node->type) {
+    void printTomlNode(TomlNode const &node, int indent) {
+        switch (node.type) {
             case TomlTypes::TOML_STRING:
-                printf("%s = \"%s\"\n", node->key.c_str(), node->value.s.c_str());
+                printf("%s = \"%s\"\n", node.key.c_str(), node.value.s.c_str());
                 break;
             case TomlTypes::TOML_INT:
-                std::cout << node->value.i;
+                std::cout << node.value.i;
                 break;
             case TomlTypes::TOML_FLOAT:
-                std::cout << node->value.f;
+                std::cout << node.value.f;
                 break;
             case TomlTypes::TOML_BOOL:
-                std::cout << (node->value.b ? "true" : "false");
+                std::cout << (node.value.b ? "true" : "false");
                 break;
             case TomlTypes::TOML_TABLE:
-                for (auto [key, val] : node->value.t) {
-                    printTomlNode(val, indent + 2);
+                for (auto start = node.value.t.begin(); start != node.value.t.end(); start++) {
+                    printTomlNode(*start->second.get(), indent + 2);
                 }
                 break;
             case TomlTypes::TOML_ARRAY:
-                printf("%d\n", node->value.a.size());
-                for (auto val : node->value.a) {
-                    printTomlNode(val, indent + 2);
+                for (auto start = node.value.a.begin(); start != node.value.a.end(); start++) {
+                    printTomlNode(*(*start).get(), indent + 2);
                 }
+                break;
+            case TomlTypes::TOML_DATETIME:
+                break;
+            case TomlTypes::TOML_NONE:
                 break;
         }
     }

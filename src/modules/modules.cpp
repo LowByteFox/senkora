@@ -20,7 +20,7 @@
 namespace fs = std::filesystem;
 
 extern std::map<int, Senkora::MetadataObject *> moduleMetadatas;
-extern std::map<std::string, v8::Local<v8::Module>> moduleCache;
+extern std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
 
 namespace Senkora::Modules {
     void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta) {

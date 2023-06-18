@@ -24,8 +24,8 @@ namespace tomlMod {
         v8::Local<v8::String> path = args[0]->ToString(ctx).ToLocalChecked();
         v8::String::Utf8Value pathUtf8(isolate, path);
 
-        Senkora::TOML::TomlNode *node = Senkora::TOML::parse(std::string(*pathUtf8));
-        Senkora::TOML::printTomlNode(node);
+        auto node = Senkora::TOML::parse(*pathUtf8);
+        Senkora::TOML::printTomlNode(*node.get());
 
         args.GetReturnValue().Set(v8::Undefined(isolate));
     }
@@ -42,7 +42,10 @@ namespace tomlMod {
 
         v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, "parse").ToLocalChecked();
         v8::Local<v8::Value> val = v8::FunctionTemplate::New(isolate, parseTOML)->GetFunction(ctx).ToLocalChecked();
-        v8::Maybe<bool> fine = mod->SetSyntheticModuleExport(isolate, name, val);
+        if (v8::Maybe<bool> fine = mod->SetSyntheticModuleExport(isolate, name, val); !fine.IsNothing() && !fine.FromJust()) {
+            Senkora::throwException(ctx, "Failed to set synthetic module export");
+            return v8::MaybeLocal<v8::Value>();
+        }
 
         return v8::Boolean::New(isolate, true);
     }

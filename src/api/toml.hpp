@@ -1,4 +1,4 @@
-#ifndef SENKORA_TOML_AAPI
+#ifndef SENKORA_TOML_API
 #define SENKORA_TOML_API
 
 #include "Senkora.hpp"
@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
 namespace Senkora::TOML {
     enum class TomlTypes {
@@ -26,23 +27,23 @@ namespace Senkora::TOML {
             // C++ doesn't have unions with non-trivial members, so we have to use a struct
             struct {
                 std::string s;
-                int i;
-                float f;
+                int64_t i;
+                double f;
                 bool b;
-                std::vector<TomlNode*> a;
-                std::map<std::string, TomlNode*> t;
+                std::vector<std::unique_ptr<TomlNode>> a;
+                std::map<std::string_view, std::unique_ptr<TomlNode>> t;
                 toml_timestamp_t d;
             } value;
     };
 
     // don't use these
-    TomlNode *handleTable(toml_table_t *table);
-    TomlNode *handleArray(toml_array_t *arr);
-    TomlNode *handleRaw(const char *raw);
+    std::unique_ptr<TomlNode> handleTable(const toml_table_t *table);
+    std::unique_ptr<TomlNode> handleArray(const toml_array_t *arr);
+    std::unique_ptr<TomlNode> handleRaw(const char *raw);
 
     // only these
-    TomlNode *parse(std::string toml);
-    void printTomlNode(TomlNode *node, int indent = 0);
+    std::unique_ptr<TomlNode> parse(char *toml);
+    void printTomlNode(TomlNode const &node, int indent = 0);
 }
 
 #endif
