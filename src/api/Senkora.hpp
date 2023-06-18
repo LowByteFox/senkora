@@ -46,7 +46,7 @@ namespace Senkora {
         mutable int restId = 1;
         mutable std::map<int, std::unique_ptr<MetadataObject>> moduleMetadatas;
         mutable std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
-        mutable events::EventLoop *globalLoop = events::Init();
+        mutable std::unique_ptr<events::EventLoop> globalLoop = events::Init();
     } SharedGlobals;
 
     std::string readFile(const std::string& name);

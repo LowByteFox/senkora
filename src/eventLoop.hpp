@@ -11,28 +11,33 @@
 #include <v8.h>
 #include <event.hpp>
 #include <vector>
+#include <memory>
 
 namespace events {
-    typedef struct {
-        foxevents::FoxEventQueue *immediate;
-        foxevents::FoxEventQueue *rest;
-    } EventLoop;
 
     typedef struct {
         v8::Persistent<v8::Value> callback;
         v8::Persistent<v8::Object> global;
-        v8::Handle<v8::Function> func;
         v8::Isolate *isolate;
+        int id;
     } EventLoopData;
 
-    EventLoop *Init();
+    typedef struct {
+        std::unique_ptr<foxevents::FoxEventQueue> immediate;
+        std::unique_ptr<foxevents::FoxEventQueue> rest;
+        std::vector<std::unique_ptr<foxevents::FoxEvent>> immediateCache;
+        std::vector<std::unique_ptr<foxevents::FoxEvent>> restCache;
+        std::vector<std::unique_ptr<EventLoopData>> data;
+    } EventLoop;
 
-    void Run(EventLoop *loop);
-    void Add(EventLoop *loop, foxevents::FoxEvent *event);
-    void AddImmediate(EventLoop *loop, foxevents::FoxEvent *event);
-    void Remove(EventLoop *loop, int id);
-    void RemoveImmediate(EventLoop *loop, int id);
-    bool HasEvents(EventLoop *loop);
+    std::unique_ptr<EventLoop> Init();
+
+    void Run(std::unique_ptr<EventLoop> loop);
+    void Add(EventLoop* const& loop, std::unique_ptr<foxevents::FoxEvent> event);
+    void AddImmediate(EventLoop* const& loop, std::unique_ptr<foxevents::FoxEvent> event);
+    void Remove(EventLoop* const& loop, int id);
+    void RemoveImmediate(EventLoop* const& loop, int id);
+    bool HasEvents(EventLoop* const& loop);
 
     void setTimeout(const v8::FunctionCallbackInfo<v8::Value>& args);
     void setInterval(const v8::FunctionCallbackInfo<v8::Value>& args);
