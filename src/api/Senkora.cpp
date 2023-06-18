@@ -25,12 +25,12 @@ namespace fs = std::filesystem;
 
 namespace Senkora
 {
-    void MetadataObject::Set(v8::Local<v8::Context> ctx, const std::string& key, v8::Local<v8::Value> val)
+    void MetadataObject::Set(v8::Local<v8::Context> ctx, const char *key, v8::Local<v8::Value> val)
     {
         v8::Isolate *isolate = ctx->GetIsolate();
 
         this->meta[key] = (Metadata){
-            .key = v8::String::NewFromUtf8(isolate, key.c_str()).ToLocalChecked(),
+            .key = v8::String::NewFromUtf8(isolate, key).ToLocalChecked(),
             .value = val};
     }
 
@@ -39,11 +39,11 @@ namespace Senkora
         this->scent = std::move(scnt);
     }
 
-    v8::Local<v8::Value> MetadataObject::Get(const std::string& key) {
-        return this->meta[key.c_str()].value;
+    v8::Local<v8::Value> MetadataObject::Get(const std::string_view& key) {
+        return this->meta[key].value;
     }
 
-    std::map<std::string, Metadata> MetadataObject::getMeta() const {
+    std::map<std::string_view, Metadata>  MetadataObject::getMeta() const {
         return this->meta;
     }
 

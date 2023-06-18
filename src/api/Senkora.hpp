@@ -30,13 +30,13 @@ namespace Senkora {
 
     class MetadataObject {
         private:
-            std::map<std::string, Metadata> meta;
+            std::map<std::string_view, Metadata> meta;
             std::unique_ptr<Scent> scent;
 
         public:
-            void Set(v8::Local<v8::Context> ctx, const std::string& key, v8::Local<v8::Value> val);
-            v8::Local<v8::Value> Get(const std::string& key);
-            std::map<std::string, Metadata> getMeta() const;
+            void Set(v8::Local<v8::Context> ctx, const char *key, v8::Local<v8::Value> val);
+            v8::Local<v8::Value> Get(const std::string_view& key);
+            std::map<std::string_view, Metadata> getMeta() const;
             void setScent(std::unique_ptr<Scent> scnt);
             std::unique_ptr<Scent> getScent();
     };
@@ -45,7 +45,7 @@ namespace Senkora {
         mutable int lastScriptId = 0;
         mutable int restId = 1;
         mutable std::map<int, std::unique_ptr<MetadataObject>> moduleMetadatas;
-        mutable std::map<std::string, v8::Local<v8::Module>> moduleCache;
+        mutable std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
         mutable std::unique_ptr<events::EventLoop> globalLoop = events::Init();
     } SharedGlobals;
 
