@@ -11,4 +11,3 @@ println(data.hello + data.world);
 
 println(data2.AhojWorld);
 println(data2.HelloSvet);
-

@@ -6,7 +6,7 @@ async function test() {
     println("Goodbye");
 }
 
-test();
+await test();
 
 setTimeout(async () => {
     await sleep(500);

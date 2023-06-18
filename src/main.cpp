@@ -157,7 +157,7 @@ void run(std::string nextArg, std::any data) {
         exit(1);
     }
 
-    if (v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx); mod->GetStatus() == v8::Module::kErrored && res.IsEmpty()) {
+    if (v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx); mod->GetStatus() == v8::Module::kErrored && !res.IsEmpty()) {
         Senkora::printException(ctx, mod->GetException());
         exit(1);
     }

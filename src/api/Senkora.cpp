@@ -43,7 +43,7 @@ namespace Senkora
         return this->meta[key.c_str()].value;
     }
 
-    std::map<std::string_view, Metadata> MetadataObject::getMeta() const {
+    std::map<std::string, Metadata> MetadataObject::getMeta() const {
         return this->meta;
     }
 
