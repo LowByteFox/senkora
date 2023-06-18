@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
-int writeToFile(char *filename, char *data) {
+int writeToFile(const char *filename, const char *data) {
     FILE *f = fopen(filename, "wb");
-    int size = strlen(data);
+    size_t size = strlen(data);
 
     if (f == NULL) {
         return 0;
@@ -20,7 +20,7 @@ int writeToFile(char *filename, char *data) {
     return 1;
 }
 
-char *readFromFile(char *filename) {
+char *readFromFile(const char *filename) {
     FILE* f = fopen(filename, "rb");
     char *str = malloc(1);
     int len = 1;
@@ -31,7 +31,7 @@ char *readFromFile(char *filename) {
 
     while (!feof(f)) {
         str = realloc(str, len + 1);
-        str[len - 1] = fgetc(f);
+        str[len - 1] = (char) fgetc(f);
         len++;
     }
     str[len - 2] = '\0';

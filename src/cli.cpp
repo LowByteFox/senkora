@@ -1,6 +1,6 @@
 #include "cli.hpp"
 
-void ArgHandler::onArg(std::string arg, const std::function<void(std::string data, std::any extraData)>& func, std::any data) {
+void ArgHandler::onArg(const std::string& arg, const std::function<void(std::string data, std::any extraData)>& func, std::any data) {
     this->funcs[arg] = func;
     this->extraDatas[arg] = data;
 }

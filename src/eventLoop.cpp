@@ -11,13 +11,11 @@
 #include "eventLoop.hpp"
 #include "v8-context.h"
 
-events::EventLoop *globalLoop;
-
-static int restId = 1;
+extern const Senkora::SharedGlobals globals;
 
 namespace events {
     EventLoop *Init() {
-        EventLoop *loop = new EventLoop;
+        auto loop = new EventLoop;
         loop->immediate = new foxevents::FoxEventQueue();
         loop->rest = new foxevents::FoxEventQueue();
 
@@ -81,16 +79,16 @@ namespace events {
         }
 
         v8::Handle<v8::Value> callback(args[0]);
-        int timeout = args[1]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        long timeout = args[1]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
 
-        EventLoopData *funcArgs = new EventLoopData;
+        auto funcArgs = new EventLoopData;
         funcArgs->callback.Reset(isolate, callback);
         funcArgs->global.Reset(isolate, args.This());
         funcArgs->isolate = isolate;
 
-        foxevents::FoxEvent *event = new foxevents::FoxEvent(timeout, false, executionFunc, funcArgs, restId);
-        Add(globalLoop, event);
-        restId++;
+        auto event = new foxevents::FoxEvent(timeout, false, executionFunc, funcArgs, globals.restId);
+        Add(globals.globalLoop, event);
+        globals.restId++;
         args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
     }
 
@@ -109,14 +107,14 @@ namespace events {
 
         v8::Handle<v8::Value> callback(args[0]);
 
-        EventLoopData *funcArgs = new EventLoopData;
+        auto funcArgs = new EventLoopData;
         funcArgs->callback.Reset(isolate, callback);
         funcArgs->global.Reset(isolate, args.This());
         funcArgs->isolate = isolate;
 
-        foxevents::FoxEvent *event = new foxevents::FoxEvent(0, false, executionFunc, funcArgs, restId);
-        AddImmediate(globalLoop, event);
-        restId++;
+        auto event = new foxevents::FoxEvent(0, false, executionFunc, funcArgs, globals.restId);
+        AddImmediate(globals.globalLoop, event);
+        globals.restId++;
         args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
     }
 
@@ -138,16 +136,16 @@ namespace events {
         }
 
         v8::Handle<v8::Value> callback(args[0]);
-        int timeout = args[1]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        long timeout = args[1]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
 
-        EventLoopData *funcArgs = new EventLoopData;
+        auto funcArgs = new EventLoopData;
         funcArgs->callback.Reset(isolate, callback);
         funcArgs->global.Reset(isolate, args.This());
         funcArgs->isolate = isolate;
 
-        foxevents::FoxEvent *event = new foxevents::FoxEvent(timeout, true, executionFunc, funcArgs, restId);
-        Add(globalLoop, event);
-        restId++;
+        auto event = new foxevents::FoxEvent(timeout, true, executionFunc, funcArgs, globals.restId);
+        Add(globals.globalLoop, event);
+        globals.restId++;
         args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
     }
 
@@ -164,8 +162,8 @@ namespace events {
             Senkora::throwException(ctx, "clearInterval requires a number as the first argument");
         }
 
-        int id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
-        Remove(globalLoop, id);
+        long id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        Remove(globals.globalLoop, (int) id);
     }
 
     void clearTimeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -181,8 +179,8 @@ namespace events {
             Senkora::throwException(ctx, "clearTimeout requires a number as the first argument");
         }
 
-        int id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
-        Remove(globalLoop, id);
+        long id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        Remove(globals.globalLoop, (int) id);
     }
 
     void clearImmediate(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -198,23 +196,23 @@ namespace events {
             Senkora::throwException(ctx, "clearImmediate requires a number as the first argument");
         }
 
-        int id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
-        RemoveImmediate(globalLoop, id);
+        long id = args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
+        RemoveImmediate(globals.globalLoop, (int) id);
     }
 
     void executionFunc(void *args) {
-        EventLoopData *funcArgs = (EventLoopData *) args;
-        v8::Isolate *isolate = funcArgs->isolate;
-        v8::Isolate::Scope isolateScope(isolate);
-        v8::HandleScope scope(isolate);
-        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
-        v8::Context::Scope contextScope(isolate->GetCurrentContext());
+        auto funcArgs = (EventLoopData *) args;
+        v8::Isolate *isolation = funcArgs->isolate;
+        v8::Isolate::Scope isolateScope(isolation);
+        v8::HandleScope scope(isolation);
+        v8::Local<v8::Context> ctx = isolation->GetCurrentContext();
+        v8::Context::Scope contextScope(ctx);
 
-        v8::Local<v8::Value> preFunc = funcArgs->callback.Get(isolate);
-        v8::Local<v8::Object> global = funcArgs->global.Get(isolate);
+        v8::Local<v8::Value> preFunc = funcArgs->callback.Get(isolation);
+        v8::Local<v8::Object> global = funcArgs->global.Get(isolation);
 
         v8::Local<v8::Function> func = v8::Local<v8::Function>::Cast(preFunc);
-        v8::TryCatch tryCatch(isolate);
+        v8::TryCatch tryCatch(isolation);
         v8::MaybeLocal<v8::Value> result = func->Call(ctx, global, 0, nullptr);
 
         if (tryCatch.HasCaught() || result.IsEmpty()) {

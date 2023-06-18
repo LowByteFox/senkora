@@ -34,20 +34,17 @@ namespace Senkora
             .value = val};
     }
 
-    v8::Local<v8::Value> MetadataObject::Get(const std::string& key)
+    void MetadataObject::setScent(Scent *scnt)
     {
-        Metadata meta = this->meta[key];
-        return meta.value;
+        this->scent = scnt;
     }
 
-    std::map<std::string, Metadata> MetadataObject::getMeta()
-    {
+    v8::Local<v8::Value> MetadataObject::Get(const std::string& key) {
+        return this->meta[key.c_str()].value;
+    }
+
+    std::map<std::string_view, Metadata> MetadataObject::getMeta() const {
         return this->meta;
-    }
-
-    void MetadataObject::setScent(Scent *scent)
-    {
-        this->scent = scent;
     }
 
     Scent *MetadataObject::getScent()
@@ -55,7 +52,7 @@ namespace Senkora
         return this->scent;
     }
 
-    std::string readFile(std::string name)
+    std::string readFile(const std::string& name)
     {
         std::ifstream file(name);
         if (!file.good())
@@ -72,7 +69,7 @@ namespace Senkora
         return out;
     }
 
-    v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, std::string code)
+    v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, const std::string& code)
     {
         v8::Isolate *isolate = ctx->GetIsolate();
 
@@ -145,7 +142,7 @@ namespace Senkora
         } else {
             v8::Local<v8::Value> filename = metadata->Get("url");
             v8::String::Utf8Value filenameStr(isolate, filename);
-            fs::path path = fs::path(*filenameStr);
+            auto path = fs::path(*filenameStr);
             printf("[%s:%d:%d] %s\n", path.filename().c_str(), line, col, cstr);
         }
 
@@ -156,18 +153,17 @@ namespace Senkora
             v8::Local<v8::StackFrame> frame = stack->GetFrame(isolate, i);
             v8::Local<v8::String> funcName = frame->GetFunctionName();
             int id = frame->GetScriptId();
-            MetadataObject *metadata = globals.moduleMetadatas[id];
-            if (metadata) {
-                v8::Local<v8::Value> filename = metadata->Get("url");
+            auto tempMetadata = globals.moduleMetadatas[id];
+            if (tempMetadata) {
+                v8::Local<v8::Value> filename = tempMetadata->Get("url");
                 v8::String::Utf8Value filenameStr(isolate, filename);
-                fs::path path = fs::path(*filenameStr);
+                auto path = fs::path(*filenameStr);
                 if (funcName.IsEmpty()) {
                     printf("    at %s [%d:%d]\n", path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
                 } else {
                     v8::String::Utf8Value funcNameStr(isolate, funcName);
                     printf("    at %s() [%s:%d:%d]\n", *funcNameStr, path.filename().c_str(), frame->GetLineNumber(), frame->GetColumn());
                 }
-            } else {
             }
         }
         printf("=====================================\n");
@@ -192,12 +188,12 @@ namespace Senkora
 
         char buff[12];
         sprintf(buff, "%d", line);
-        int width = strlen(buff);
+        size_t width = strlen(buff);
 
         for (int i = startLine; i < line; i++) {
-            printf("%*d |%s\n", width, i + 1, lines[i].c_str());
+            printf("%*d |%s\n", (int) width, i + 1, lines[i].c_str());
         }
-        printf("%*c |", width, ' ');
+        printf("%*c |", (int) width, ' ');
         for (int i = 0; i < col; i++) {
             putchar(' ');
         }
@@ -212,8 +208,8 @@ namespace Senkora
         if (!strcmp("AggregateError", *nameStr)) {
             v8::Local<v8::Value> errors = obj->Get(ctx, v8::String::NewFromUtf8(isolate, "errors").ToLocalChecked()).ToLocalChecked();
             v8::Local<v8::Array> errorsArray = v8::Local<v8::Array>::Cast(errors);
-            int length = errorsArray->Length();
-            for (int i = 0; i < length; i++) {
+            int errorArrLength = errorsArray->Length();
+            for (int i = 0; i < errorArrLength; i++) {
                 v8::Local<v8::Value> error = errorsArray->Get(ctx, i).ToLocalChecked();
                 printException(ctx, error);
             }

@@ -2,6 +2,7 @@
 #define SENKORA_API
 
 #include "Scent.hpp"
+#include "../eventLoop.hpp"
 #include "v8-exception.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
@@ -28,32 +29,27 @@ namespace Senkora {
 
     class MetadataObject {
         private:
-            std::map<std::string, Metadata> meta;
+            std::map<std::string_view, Metadata> meta;
             Scent *scent;
 
         public:
             void Set(v8::Local<v8::Context> ctx, const std::string& key, v8::Local<v8::Value> val);
             v8::Local<v8::Value> Get(const std::string& key);
-            std::map<std::string, Metadata> getMeta();
+            std::map<std::string_view, Metadata> getMeta() const;
             void setScent(Scent *scent);
             Scent *getScent();
     };
 
     typedef struct {
         mutable int lastScriptId = 0;
+        mutable int restId = 1;
         mutable std::map<int, MetadataObject*> moduleMetadatas;
         mutable std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
+        mutable events::EventLoop *globalLoop = events::Init();
     } SharedGlobals;
 
-    std::string readFile(std::string name);
-    v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, std::string code);
-
-    v8::MaybeLocal<v8::Module> createModule(
-        v8::Local<v8::Context> ctx,
-        std::string module_name,
-        std::vector<v8::Local<v8::String>> export_names,
-        v8::Module::SyntheticModuleEvaluationSteps step
-    );
+    std::string readFile(const std::string& name);
+    v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, const std::string& code);
 
     v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ExceptionType::ERROR);
 

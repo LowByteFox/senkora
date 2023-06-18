@@ -89,8 +89,6 @@ void notImplementedFunc(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 inline const Senkora::SharedGlobals globals;
 
-extern events::EventLoop *globalLoop;
-
 void run(std::string nextArg, std::any data) {
     if (nextArg.length() == 0) {
         printf("Error: missing file\n");
@@ -102,8 +100,6 @@ void run(std::string nextArg, std::any data) {
     v8::HandleScope handle_scope(isolate);
 
     isolate->SetCaptureStackTraceForUncaughtExceptions(true);
-
-    globalLoop = events::Init();
 
     v8::Local<v8::ObjectTemplate> global = globalObject::Init(isolate);
     globalObject::AddFunction(isolate, global, "print", v8::FunctionTemplate::New(isolate, Print));
@@ -126,9 +122,9 @@ void run(std::string nextArg, std::any data) {
     ctx->SetErrorMessageForCodeGenerationFromStrings(v8::String::NewFromUtf8(isolate, "both 'eval' and 'Function' constructor are disabled!").ToLocalChecked());
     v8::Context::Scope context_scope(ctx);
 
-    ObjectBuilder glob = ObjectBuilder(isolate);
+    auto glob = ObjectBuilder(isolate);
     glob.Dissasemble(ctx->Global());
-    ObjectBuilder console = ObjectBuilder(isolate);
+    auto console = ObjectBuilder(isolate);
     const char *consoleMethods[] = {"log", "info", "warn", "error", "debug", "trace", "dir", "dirxml", "table", "count", "countReset", "assert", "profile", "profileEnd", "timeLog", "timeEnd", "group", "groupCollapsed", "groupEnd", "clear", "time", "timeStamp", "context"};
     for (int i = 0; i < 22; i++) {
         console.Set(consoleMethods[i], v8::FunctionTemplate::New(isolate, notImplementedFunc));
@@ -155,7 +151,7 @@ void run(std::string nextArg, std::any data) {
     scent->num = 5454;
     meta->setScent(scent.get());
 
-    globals.moduleCache[filePath] = mod;
+    globals.moduleCache[filePath.c_str()] = mod;
     globals.moduleMetadatas[mod->ScriptId()] = meta.get();
 
     v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver);
@@ -167,7 +163,7 @@ void run(std::string nextArg, std::any data) {
         exit(1);
     }
 
-    events::Run(globalLoop);
+    events::Run(globals.globalLoop);
 }
 
 void ArgHandler::printHelp() const {

@@ -7,10 +7,10 @@
 namespace Senkora::Object {
     class ObjectBuilder {
         public:
-            ObjectBuilder(v8::Isolate *isolate);
+            explicit ObjectBuilder(v8::Isolate *isolate);
             v8::Local<v8::Object> Assemble(v8::Local<v8::Context> ctx);
             v8::Local<v8::ObjectTemplate> GetTemplate() { return this->obj; }
-            void Dissasemble(v8::Local<v8::Object> obj);
+            void Dissasemble(v8::Local<v8::Object> object);
             void Set(const char* name, v8::Local<v8::Value> value);
             void Set(const char* name, v8::Local<v8::FunctionTemplate> value);
             void Set(const char* name, v8::Local<v8::Object> value);

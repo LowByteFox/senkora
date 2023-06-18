@@ -23,7 +23,7 @@ extern const Senkora::SharedGlobals globals;
 
 namespace Senkora::Modules {
     void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta) {
-        Senkora::MetadataObject *obj = globals.moduleMetadatas[mod->ScriptId()];
+        const Senkora::MetadataObject *obj = globals.moduleMetadatas[mod->ScriptId()];
         auto modMeta = obj->getMeta();
         for (auto it = modMeta.begin(); it != modMeta.end(); it++)
         {
@@ -33,7 +33,12 @@ namespace Senkora::Modules {
         }
     }
 
-    v8::MaybeLocal<v8::Module> moduleResolver(v8::Local<v8::Context> ctx, v8::Local<v8::String> specifier, v8::Local<v8::FixedArray> import_assertions, v8::Local<v8::Module> ref) {
+    v8::MaybeLocal<v8::Module> moduleResolver(
+        v8::Local<v8::Context> ctx,
+        v8::Local<v8::String> specifier,
+        [[maybe_unused]] v8::Local<v8::FixedArray> import_assertions,
+        v8::Local<v8::Module> ref
+    ) {
         v8::String::Utf8Value val(ctx->GetIsolate(), specifier);
         std::string name(*val);
 
@@ -69,14 +74,14 @@ namespace Senkora::Modules {
 
         std::string code = Senkora::readFile(base);
 
-        Senkora::MetadataObject *meta = new Senkora::MetadataObject();
+        auto meta = new Senkora::MetadataObject();
         v8::Local<v8::Value> url = v8::String::NewFromUtf8(ctx->GetIsolate(), base.c_str()).ToLocalChecked();
 
         meta->Set(ctx, "url", url);
 
         v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
-        Senkora::Scent *scent = new Senkora::Scent();
+        auto scent = new Senkora::Scent();
         scent->num = mod->ScriptId();
         meta->setScent(scent);
 
@@ -89,9 +94,9 @@ namespace Senkora::Modules {
 
     v8::MaybeLocal<v8::Module> createModule(
         v8::Local<v8::Context> ctx,
-        std::string module_name,
-        std::vector<v8::Local<v8::String>> export_names,
-        v8::Module::SyntheticModuleEvaluationSteps step
+        const std::string& module_name,
+        const std::vector<v8::Local<v8::String>>& export_names,
+        const v8::Module::SyntheticModuleEvaluationSteps& step
     ) {
         v8::Isolate *isolate = ctx->GetIsolate();
 
@@ -107,7 +112,7 @@ namespace Senkora::Modules {
 
         globals.moduleCache["senkora:__empty"] = createModule(ctx, 
             "senkora:__empty",
-            dummy::getExports(isolate), dummy::init).ToLocalChecked();
+            dummy::getExports(), dummy::init).ToLocalChecked();
 
         #ifdef ENABLE_FS
         globals.moduleCache["senkora:fs"] = createModule(ctx, 

@@ -17,7 +17,7 @@ class ArgHandler {
     public:
         ArgHandler(int argc, char **argv): argc(argc), argv(argv) {}
 
-        void onArg(std::string arg, const std::function<void(std::string data, std::any extraData)>& func, std::any data = nullptr);
+        void onArg(const std::string& arg, const std::function<void(std::string data, std::any extraData)>& func, std::any data = nullptr);
 
         void run();
 };
