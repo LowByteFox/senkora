@@ -26,8 +26,8 @@ namespace events {
         return loop;
     }
 
-    void Run(std::unique_ptr<EventLoop> loop) {
-        while (HasEvents(loop.get())) {
+    void Run(EventLoop* const& loop) {
+        while (HasEvents(loop)) {
             uint64_t now = getTimeInMs();
             if (!loop->immediate->empty()) {
                 loop->immediate->run(now);
@@ -38,14 +38,12 @@ namespace events {
         }
     }
 
-    void Add(EventLoop* const& loop, std::unique_ptr<foxevents::FoxEvent> event) {
-        loop->rest->add(event.get());
-        globals.globalLoop->restCache.push_back(std::move(event));
+    void Add(EventLoop* const& loop, foxevents::FoxEvent* const& event) {
+        loop->rest->add(event);
     }
 
-    void AddImmediate(EventLoop* const& loop, std::unique_ptr<foxevents::FoxEvent> event) {
-        loop->immediate->add(event.get());
-        globals.globalLoop->immediateCache.push_back(std::move(event));
+    void AddImmediate(EventLoop* const& loop, foxevents::FoxEvent* const& event) {
+        loop->immediate->add(event);
     }
 
     void Remove(EventLoop* const& loop, int id) {
@@ -124,8 +122,9 @@ namespace events {
 
         auto event = std::make_unique<foxevents::FoxEvent>(timeout, false, executionFunc, funcArgs.get(), globals.restId);
         args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
-        Add(globals.globalLoop.get(), std::move(event));
+        Add(globals.globalLoop.get(), event.get());
         globals.globalLoop->data.push_back(std::move(funcArgs));
+        globals.globalLoop->restCache.push_back(std::move(event));
         globals.restId++;
     }
 
@@ -152,8 +151,9 @@ namespace events {
 
         auto event = std::make_unique<foxevents::FoxEvent>(0, false, executionFunc, funcArgs.get(), globals.restId);
         args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
-        AddImmediate(globals.globalLoop.get(), std::move(event));
+        AddImmediate(globals.globalLoop.get(), event.get());
         globals.globalLoop->data.push_back(std::move(funcArgs));
+        globals.globalLoop->immediateCache.push_back(std::move(event));
 
         globals.restId++;
     }
@@ -186,7 +186,8 @@ namespace events {
 
         auto event = std::make_unique<foxevents::FoxEvent>(timeout, true, executionFunc, funcArgs.get(), globals.restId);
         args.GetReturnValue().Set(v8::Integer::New(isolate, event->id));
-        Add(globals.globalLoop.get(), std::move(event));
+        Add(globals.globalLoop.get(), event.get());
+        globals.globalLoop->restCache.push_back(std::move(event));
         globals.globalLoop->data.push_back(std::move(funcArgs));
         globals.restId++;
     }

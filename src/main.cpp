@@ -162,7 +162,7 @@ void run(std::string nextArg, std::any data) {
         exit(1);
     }
 
-    events::Run(std::move(globals.globalLoop));
+    events::Run(globals.globalLoop.get());
 }
 
 void ArgHandler::printHelp() const {

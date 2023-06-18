@@ -32,9 +32,9 @@ namespace events {
 
     std::unique_ptr<EventLoop> Init();
 
-    void Run(std::unique_ptr<EventLoop> loop);
-    void Add(EventLoop* const& loop, std::unique_ptr<foxevents::FoxEvent> event);
-    void AddImmediate(EventLoop* const& loop, std::unique_ptr<foxevents::FoxEvent> event);
+    void Run(EventLoop* const& loop);
+    void Add(EventLoop* const& loop, foxevents::FoxEvent* const& event);
+    void AddImmediate(EventLoop* const& loop, foxevents::FoxEvent* const& eventt);
     void Remove(EventLoop* const& loop, int id);
     void RemoveImmediate(EventLoop* const& loop, int id);
     bool HasEvents(EventLoop* const& loop);
