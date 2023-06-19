@@ -5,6 +5,7 @@
 
 #include "cli.hpp"
 #include "eventLoop.hpp"
+#include "project.hpp"
 #include "modules/modules.hpp"
 #include "v8-container.h"
 #include "v8-context.h"
@@ -38,6 +39,7 @@
 
 namespace fs = std::filesystem;
 using Senkora::Object::ObjectBuilder;
+using Senkora::TOML::TomlTypes;
 
 const char* ToCString(const v8::String::Utf8Value& value) {
     return *value ? *value : "<string conversion failed>";
@@ -87,6 +89,75 @@ void notImplementedFunc(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 inline const Senkora::SharedGlobals globals;
+const std::unique_ptr<Senkora::TOML::TomlNode> projectConfig = project::parseProjectConfig("project.toml");
+
+void createProject(const fs::path& projectName, [[maybe_unused]] std::any data) {
+    if (strlen(projectName.c_str()) == 0) {
+        printf("Error: missing project name\n");
+        return;
+    }
+
+    if (fs::exists(projectName)) {
+        printf("Error: project already exists\n");
+        return;
+    }
+
+    fs::create_directory(projectName);
+    int out = chdir(projectName.c_str());
+    if (out) {
+        printf("Error: failed to change directory\n");
+        return;
+    }
+
+    printf("Creating project...\n");
+
+    std::string configFile = "[project]\nname = \"";
+    configFile += projectName;
+    configFile += "\"\n";
+    // description
+    std::string description = Senkora::userin("Type the project description: ");
+    configFile += "description = \"";
+    configFile += description;
+    configFile += "\"\n";
+
+    // main file
+    configFile += "main = \"index.js\"\n";
+
+    // author name from computer username
+    std::string author = getenv("USER");
+    configFile += "authors = [\"";
+    configFile += author;
+    configFile += "\"]\n";
+
+    // dependencies
+    configFile += "\n[dependencies]\n";
+    configFile += "# project dependencies (work in progress)\n";
+
+    // senkora config
+    configFile += "\n[senkora]\n";
+    configFile += "# senkora config (work in progress)\n";
+
+    Senkora::writeFile("project.toml", configFile.c_str());
+    Senkora::writeFile("index.js", "println(\"Kon kon Senkora!\");");
+
+    printf("Project created!\n");
+    printf("To get started:\n  cd %s\n  senkora run index.js\n", projectName.c_str());
+
+    out = chdir("..");
+    if (out) {
+        printf("Error: failed to change directory\n");
+        return;
+    }
+}
+
+void handleProjectConfig(std::string& nextArg, Senkora::TOML::TomlNode* const& project) {
+    if (project->type == TomlTypes::TOML_TABLE && project->value.t.contains("main")) {
+        const auto& main = project->value.t["main"];
+        if (main->type == TomlTypes::TOML_STRING) {
+            nextArg = main->value.s;
+        }
+    }
+}
 
 void run(std::string nextArg, std::any data) {
     if (nextArg.length() == 0) {
@@ -169,6 +240,22 @@ void run(std::string nextArg, std::any data) {
     events::Run(globals.globalLoop.get());
 }
 
+void runDot(std::string nextArg, std::any args) {
+    if (projectConfig.get()->type != TomlTypes::TOML_NONE) {
+        const auto& projectConf = projectConfig.get();
+        if (projectConf->type == TomlTypes::TOML_TABLE && projectConf->value.t.contains("project")) {
+            const auto& project = projectConf->value.t["project"];
+            handleProjectConfig(nextArg, project.get());
+        }
+    }
+
+    run(nextArg, args);
+}
+
+void printVersion([[maybe_unused]] std::string nextArg, [[maybe_unused]] std::any args) {
+    printf("0.0.1\n");
+}
+
 void ArgHandler::printHelp() const {
     printf(R"(Senkora - the JavaScript runtime for the modern age
 
@@ -178,6 +265,20 @@ OPTIONS:
   help, -h,           Display this help message
   version, -v         Display version
   run <SCRIPT>        Execute <SCRIPT> file
+  create <NAME>       Create a new project with the name <NAME>
+)");
+}
+
+void printHelp([[maybe_unused]] std::string nextArg, [[maybe_unused]] std::any args) {
+    printf(R"(Senkora - the JavaScript runtime for the modern age
+
+Usage: senkora [OPTIONS] [ARGS]
+
+OPTIONS:
+  help, -h,           Display this help message
+  version, -v         Display version
+  run <SCRIPT>        Execute <SCRIPT> file
+  create <NAME>       Create a new project with the name <NAME>
 )");
 }
 
@@ -195,8 +296,16 @@ int main(int argc, char* argv[]) {
 
     v8::Isolate* isolate = v8::Isolate::New(create_params);
 
+    std::vector<std::any> args{isolate, false};
+
     ArgHandler argHandler(argc, argv);
+    argHandler.onArg("help", printHelp, args);
+    argHandler.onArg("-h", printHelp, args);
+    argHandler.onArg("version", printVersion, args);
+    argHandler.onArg("-v", printVersion, args);
+    argHandler.onArg(".", runDot, isolate);
     argHandler.onArg("run", run, isolate);
+    argHandler.onArg("create", createProject, nullptr);
     argHandler.run();
 
     isolate->Dispose();

@@ -14,6 +14,7 @@
 #include <cstring>
 #include <functional>
 #include <sstream>
+#include <iostream>
 #include <string>
 #include <fstream>
 #include <filesystem>
@@ -66,6 +67,20 @@ namespace Senkora
 
         file.close();
 
+        return out;
+    }
+
+    void writeFile(const std::string& name, const std::string& content) {
+        std::ofstream file(name);
+        file << content;
+        file.close();
+    }
+
+    std::string userin(const std::string& prompt) {
+        printf("%s", prompt.c_str());
+        fflush(stdout);
+        std::string out;
+        std::getline(std::cin, out);
         return out;
     }
 

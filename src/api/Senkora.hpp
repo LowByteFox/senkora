@@ -50,6 +50,8 @@ namespace Senkora {
     } SharedGlobals;
 
     std::string readFile(const std::string& name);
+    void writeFile(const std::string& name, const std::string& content);
+    std::string userin(const std::string& prompt);
     v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, const std::string& code);
 
     v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type = ExceptionType::ERROR);
