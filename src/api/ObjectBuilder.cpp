@@ -53,10 +53,24 @@ namespace Senkora::Object {
         v8::Context::Scope context_scope(ctx);
 
         if (!this->isDissasembled) {
-            this->obj->Set(isolation, name, value);
+            this->obj->Set(isolation, name, v8::Local<v8::Value>::Cast(value));
             this->keys->Set(ctx, this->keys->Length(), v8::String::NewFromUtf8(isolation, name).ToLocalChecked()).FromJust();
         } else {
             this->dissasembly->Set(ctx, v8::String::NewFromUtf8(isolation, name).ToLocalChecked(), value).FromJust();
+        }
+    }
+
+    void ObjectBuilder::Set(const char* name, v8::Local<v8::ObjectTemplate> value) {
+        v8::Isolate *isolation = this->isolate;
+        v8::Isolate::Scope isolate_scope(isolation);
+        v8::Local<v8::Context> ctx = isolation->GetCurrentContext();
+        v8::Context::Scope context_scope(ctx);
+
+        if (!this->isDissasembled) {
+            this->obj->Set(isolation, name, value);
+            this->keys->Set(ctx, this->keys->Length(), v8::String::NewFromUtf8(isolation, name).ToLocalChecked()).FromJust();
+        } else {
+            this->dissasembly->Set(ctx, v8::String::NewFromUtf8(isolation, name).ToLocalChecked(), value->NewInstance(ctx).ToLocalChecked()).FromJust();
         }
     }
 
