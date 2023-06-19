@@ -8,6 +8,7 @@ extern "C" {
 
 #include <v8.h>
 #include <Senkora.hpp>
+#include "../modules.hpp"
 
 namespace fsMod {
     void writeToFileJS(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -71,19 +72,25 @@ namespace fsMod {
 
         exports.push_back(v8::String::NewFromUtf8(isolate, "writeToFile").ToLocalChecked());
         exports.push_back(v8::String::NewFromUtf8(isolate, "readFromFile").ToLocalChecked());
+        exports.push_back(v8::String::NewFromUtf8(isolate, "default").ToLocalChecked());
         return exports;
     }
 
     v8::MaybeLocal<v8::Value> init(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod) {
         v8::Isolate *isolate = ctx->GetIsolate();
 
+        v8::Local<v8::Object> default_exports = v8::Object::New(isolate);
+
         v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, "writeToFile").ToLocalChecked();
         v8::Local<v8::Value> val = v8::FunctionTemplate::New(isolate, writeToFileJS)->GetFunction(ctx).ToLocalChecked();
-        v8::Maybe<bool> fine = mod->SetSyntheticModuleExport(isolate, name, val);
+        Senkora::Modules::setModuleExport(mod, ctx, default_exports, isolate, name, val);
 
         name = v8::String::NewFromUtf8(isolate, "readFromFile").ToLocalChecked();
         val = v8::FunctionTemplate::New(isolate, readFromFileJS)->GetFunction(ctx).ToLocalChecked();
-        fine = mod->SetSyntheticModuleExport(isolate, name, val);
+        Senkora::Modules::setModuleExport(mod, ctx, default_exports, isolate, name, val);
+
+        // default module export
+        Senkora::Modules::setModuleExport(mod, ctx, isolate, v8::String::NewFromUtf8(isolate, "default").ToLocalChecked(), default_exports);
 
         return v8::Boolean::New(isolate, true);
     }

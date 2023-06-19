@@ -112,13 +112,42 @@ namespace Senkora::Modules {
         return mod;
     }
 
+    void setModuleExport(
+        v8::Local<v8::Module> mod,
+        v8::Local<v8::Context> ctx,
+        v8::Isolate *isolate,
+        v8::Local<v8::String> export_name,
+        v8::Local<v8::Value> export_value
+    ) {
+        if (v8::Maybe<bool> fine = mod->SetSyntheticModuleExport(isolate, export_name, export_value); !fine.IsNothing() && !fine.FromJust()) {
+            Senkora::throwException(ctx, "Failed to set synthetic module export");
+        }
+    }
+
+    void setModuleExport(
+        v8::Local<v8::Module> mod,
+        v8::Local<v8::Context> ctx,
+        v8::Local<v8::Object> default_exports,
+        v8::Isolate *isolate,
+        v8::Local<v8::String> export_name,
+        v8::Local<v8::Value> export_value
+    ) {
+        if (v8::Maybe<bool> fine = mod->SetSyntheticModuleExport(isolate, export_name, export_value); !fine.IsNothing() && !fine.FromJust()) {
+            Senkora::throwException(ctx, "Failed to set synthetic module export");
+        }
+
+        if (v8::Maybe<bool> fine = default_exports->Set(ctx, export_name, export_value); !fine.IsNothing() && !fine.FromJust()) {
+            Senkora::throwException(ctx, "Failed to set synthetic module export");
+        }
+    }
+
     // INIT builtin modules here
     void initBuiltinModules(v8::Isolate *isolate) {
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
 
         globals.moduleCache["senkora:__empty"] = createModule(ctx, 
             "senkora:__empty",
-            dummy::getExports(), dummy::init).ToLocalChecked();
+            dummy::getExports(isolate), dummy::init).ToLocalChecked();
 
         #ifdef ENABLE_FS
         globals.moduleCache["senkora:fs"] = createModule(ctx, 

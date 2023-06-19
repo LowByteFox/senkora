@@ -21,6 +21,23 @@ namespace Senkora::Modules {
         const v8::Module::SyntheticModuleEvaluationSteps& step
     );
 
+    void setModuleExport(
+        v8::Local<v8::Module> mod,
+        v8::Local<v8::Context> ctx,
+        v8::Isolate *isolate,
+        v8::Local<v8::String> export_name,
+        v8::Local<v8::Value> export_value
+    );
+
+    void setModuleExport(
+        v8::Local<v8::Module> mod,
+        v8::Local<v8::Context> ctx,
+        v8::Local<v8::Object> default_exports,
+        v8::Isolate *isolate,
+        v8::Local<v8::String> export_name,
+        v8::Local<v8::Value> export_value
+    );
+
     void initBuiltinModules(v8::Isolate *isolate);
 }
 
