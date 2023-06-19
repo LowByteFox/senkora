@@ -73,7 +73,13 @@ namespace Senkora::Modules {
         }
 
         std::string code = Senkora::readFile(base);
-
+        if (!code.length()) {
+            std::string msg = "File \"";
+            msg += base.c_str();
+            msg += "\" was not found!";
+            Senkora::throwAndPrintException(ctx, msg.c_str());
+            exit(1);
+        }
         auto meta = std::make_unique<Senkora::MetadataObject>();
         v8::Local<v8::Value> url = v8::String::NewFromUtf8(ctx->GetIsolate(), base.c_str()).ToLocalChecked();
 

@@ -139,6 +139,10 @@ void run(std::string nextArg, std::any data) {
     }
     
     std::string code = Senkora::readFile(filePath);
+    if (!code.length()) {
+        Senkora::throwAndPrintException(ctx, "Error: file not found", Senkora::ExceptionType::REFERENCE);
+        exit(1);
+    }
     auto meta = std::make_unique<Senkora::MetadataObject>();
     v8::Local<v8::Value> url = v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked();
 
