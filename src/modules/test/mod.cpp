@@ -12,6 +12,7 @@ namespace testMod
     void describe(const v8::FunctionCallbackInfo<v8::Value> &args)
     {
         v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope scope(isolate);
         v8::Isolate::Scope isolateScope(isolate);
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
         v8::Context::Scope contextScope(ctx);

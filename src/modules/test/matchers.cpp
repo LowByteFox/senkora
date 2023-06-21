@@ -107,9 +107,7 @@ namespace testMatcher
                     }
                 }
             } 
-        } else if (expected->IsNull()) {
-            result = actual->IsNull();
-        }  else {
+        } else {
             result = expected->StrictEquals(actual);
         }
 
