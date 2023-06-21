@@ -1,3 +1,5 @@
-import { hello } from "senkora:xd";
+import { describe } from "senkora:test";
 
-println(hello);
+describe("Built-in modules", () => {
+  println("hey");
+});
