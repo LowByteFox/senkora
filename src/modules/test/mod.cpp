@@ -84,6 +84,15 @@ namespace testMod
         v8::Local<v8::Function> toEqualFn = v8::Function::New(ctx, testMatcher::toEqualCallback)
                                                 .ToLocalChecked();
 
+        v8::Local<v8::Function> toBeTrueFn = v8::Function::New(ctx, testMatcher::toBeTrueCallback)
+                                                .ToLocalChecked();
+
+        v8::Local<v8::Function> toBeFalseFn = v8::Function::New(ctx, testMatcher::toBeFalseCallback)
+                                                .ToLocalChecked();
+
+        v8::Local<v8::Function> toBeBooleanFn = v8::Function::New(ctx, testMatcher::toBeBooleanCallback)
+                                                .ToLocalChecked();
+
         if (args.Length() != 0 && args.Length() > 1)
         {
             Senkora::throwException(ctx, "Max. allowed: 1 argument");
@@ -91,16 +100,17 @@ namespace testMod
         }
 
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toEqual").ToLocalChecked(), toEqualFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeTrue").ToLocalChecked(), toBeTrueFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeFalse").ToLocalChecked(), toBeFalseFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeBoolean").ToLocalChecked(), toBeBooleanFn).Check();
 
-        if (args.Length() == 1)
-        {
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "negate").ToLocalChecked(), v8::Boolean::New(isolate, false)).Check();
+
+        if (args.Length() == 1){
             expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "expected").ToLocalChecked(), args[0]).Check();
-        }
-        else
-        {
+        } else {
             expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "expected").ToLocalChecked(), v8::Undefined(isolate)).Check();
         }
-
         
         expectObj->SetAccessor(
                      ctx,
@@ -113,12 +123,8 @@ namespace testMod
                          v8::Local<v8::Value> toEqualFn = info.This()->Get(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "toEqual").ToLocalChecked()).ToLocalChecked();
 
                          // Create a new object with the toEqual function and the negate flag set
-                         v8::Local<v8::Object> negatedObj = v8::Object::New(isolate);
-                         negatedObj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "toEqual").ToLocalChecked(), toEqualFn).Check();
+                         v8::Local<v8::Object> negatedObj = info.This()->Clone();
                          negatedObj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "negate").ToLocalChecked(), v8::Boolean::New(isolate, true)).Check();
-                         negatedObj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "expected").ToLocalChecked(), info.This()->
-                                Get(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "expected")
-                                .ToLocalChecked()).ToLocalChecked()).Check();
 
                          info.GetReturnValue().Set(negatedObj);
                      },
