@@ -43,6 +43,40 @@ namespace testMatcher
         return val;
     }
 
+    void compareArrays(v8::Local<v8::Context>& ctx, v8::Local<v8::Array>& expectedArray, v8::Local<v8::Array>& actualArray, bool& result) {
+        int length = expectedArray->Length();
+        for (uint32_t i = 0; i < length; i++) {
+            v8::Local<v8::Value> exAr = expectedArray->Get(ctx, i).ToLocalChecked();
+            v8::Local<v8::Value> acAr = actualArray->Get(ctx, i).ToLocalChecked();
+
+            if (!expectedArray->Get(ctx, i).ToLocalChecked()->StrictEquals(actualArray->Get(ctx, i).ToLocalChecked())) {
+                result = false;
+                break;
+            }
+        }
+    }
+
+    void compareObjects(v8::Local<v8::Context>& ctx, v8::Local<v8::Array>& expectedKeys, v8::Local<v8::Array>& actualKeys,
+                        v8::Local<v8::Object>& expectedObject, v8::Local<v8::Object>& actualObject, bool& result) {
+        for (uint32_t i = 0; i < expectedKeys->Length(); i++) {
+            v8::Local<v8::Value> expectedKey = expectedKeys->Get(ctx, i).ToLocalChecked();
+            v8::Local<v8::Value> actualKey = actualKeys->Get(ctx, i).ToLocalChecked();
+
+            if (!expectedKey->StrictEquals(actualKey)) {
+                result = false;
+                break;
+            }
+
+            v8::Local<v8::Value> expectedValue = expectedObject->Get(ctx, expectedKey).ToLocalChecked();
+            v8::Local<v8::Value> actualValue = actualObject->Get(ctx, actualKey).ToLocalChecked();
+
+            if (!expectedValue->StrictEquals(actualValue)) {
+                result = false;
+                break;
+            }
+        }
+    }
+
     bool toEqual(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
@@ -68,16 +102,7 @@ namespace testMatcher
             if (expectedArray->Length() != actualArray->Length()) {
                 result = false;
             } else {
-                for (uint32_t i = 0; i < expectedArray->Length(); i++) {
-                    
-                    v8::Local<v8::Value> exAr = expectedArray->Get(ctx, i).ToLocalChecked();
-                    v8::Local<v8::Value> acAr = actualArray->Get(ctx, i).ToLocalChecked();
-
-                    if (!expectedArray->Get(ctx, i).ToLocalChecked()->StrictEquals(actualArray->Get(ctx, i).ToLocalChecked())) {
-                        result = false;
-                        break;
-                    }
-                }
+                compareArrays(ctx, expectedArray, actualArray, result);
             }
         } else if (expected->IsObject()) {
             v8::Local<v8::Object> expectedObject = expected.As<v8::Object>();
@@ -89,23 +114,7 @@ namespace testMatcher
             if (expectedKeys->Length() != actualKeys->Length()) {
                 result = false;
             } else {
-                for (uint32_t i = 0; i < expectedKeys->Length(); i++) {
-                    v8::Local<v8::Value> expectedKey = expectedKeys->Get(ctx, i).ToLocalChecked();
-                    v8::Local<v8::Value> actualKey = actualKeys->Get(ctx, i).ToLocalChecked();
-
-                    if (!expectedKey->StrictEquals(actualKey)) {
-                        result = false;
-                        break;
-                    }
-
-                    v8::Local<v8::Value> expectedValue = expectedObject->Get(ctx, expectedKey).ToLocalChecked();
-                    v8::Local<v8::Value> actualValue = actualObject->Get(ctx, actualKey).ToLocalChecked();
-
-                    if (!expectedValue->StrictEquals(actualValue)) {
-                        result = false;
-                        break;
-                    }
-                }
+                compareObjects(ctx, expectedKeys, actualKeys, expectedObject, actualObject, result);
             } 
         } else {
             result = expected->StrictEquals(actual);
