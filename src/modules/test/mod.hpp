@@ -1,0 +1,15 @@
+#ifndef TEST_MODULE
+#define TEST_MODULE
+
+#include <v8-isolate.h>
+#include "v8-local-handle.h"
+#include "v8-primitive.h"
+#include <v8.h>
+#include <vector>
+
+namespace testMod {
+    std::vector<v8::Local<v8::String>> getExports(v8::Isolate *isolate);
+    v8::MaybeLocal<v8::Value> init(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod);
+}
+
+#endif

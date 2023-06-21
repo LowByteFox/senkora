@@ -2,6 +2,7 @@
 #include "empty.hpp"
 #include "fs/mod.hpp"
 #include "toml/mod.hpp"
+#include "test/mod.hpp"
 #include "../../config.h"
 #include "v8-message.h"
 #include "v8-primitive.h"
@@ -159,6 +160,12 @@ namespace Senkora::Modules {
         globals.moduleCache["senkora:toml"] = createModule(ctx,
             "senkora:toml",
             tomlMod::getExports(isolate), tomlMod::init).ToLocalChecked();
+        #endif
+
+        #ifdef ENABLE_TEST
+        globals.moduleCache["senkora:test"] = createModule(ctx,
+            "senkora:test",
+            testMod::getExports(isolate), testMod::init).ToLocalChecked();
         #endif
     }
 }
