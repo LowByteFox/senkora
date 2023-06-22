@@ -8,8 +8,40 @@
 #include <v8.h>
 #include "matchers.hpp"
 
+extern const Senkora::SharedGlobals globals;
+
 namespace testMatcher
 {
+    v8::Local<v8::Value> callbackErrOutput(v8::Local<v8::Context> ctx, std::string lineone, std::string linetwo)
+    {
+        // get file path and line number
+        v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(ctx->GetIsolate(), 1, v8::StackTrace::kScriptName);
+        v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(ctx->GetIsolate(), 0);
+
+        const auto &obj = globals.moduleMetadatas[stackFrame->GetScriptId()];
+        auto fullPath = obj->Get("url");
+
+        std::string fileName = *v8::String::Utf8Value(ctx->GetIsolate(), fullPath);
+
+        int lineNumber = stackFrame->GetLineNumber();
+        std::string lineAsStr = std::to_string(lineNumber);
+
+        // ANSI color codes for different text styles
+        std::string reset = "\033[0m";
+        std::string bold = "\033[1m";
+        std::string red = "\033[31m";
+        std::string green = "\033[32m";
+        std::string yellow = "\033[33m";
+        std::string gray = "\033[90m";
+
+        // print error message
+        std::string _lineone = red + bold + "Expected: " + reset + red + lineone + reset + "\n";
+        std::string _linetwo = yellow + bold + "Received: " + reset + yellow + linetwo + reset + "\n";
+        std::string _lastline = "   at " + gray + fileName + ":" + lineAsStr + reset + "\n";
+
+        return v8::String::NewFromUtf8(ctx->GetIsolate(), (_lineone + _linetwo + _lastline).c_str()).ToLocalChecked();
+    }
+
     bool getNegate(v8::Local<v8::Context> ctx, v8::Local<v8::Object> holder)
     {
         v8::Isolate *isolate = ctx->GetIsolate();
@@ -150,19 +182,21 @@ namespace testMatcher
     {
         v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
         bool r = toEqual(args, ctx);
-        bool negate = getNegate(ctx, args.Holder());
 
-        if (!r)
-        {
-            v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
-            v8::Local<v8::Value> actual = args[0];
-            std::string notOrNada = negate ? "[NOT] " : "";
-            std::cout << notOrNada << "Expected: " << *v8::String::Utf8Value(ctx->GetIsolate(), expected) << std::endl;
-            std::cout << notOrNada << "Received: " << *v8::String::Utf8Value(ctx->GetIsolate(), actual) << std::endl;
+        if (r)
             return;
-        }
 
-        std::cout << "Test passed" << std::endl;
+        bool negate = getNegate(ctx, args.Holder());
+        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
+
+        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -188,20 +222,21 @@ namespace testMatcher
         v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
 
         bool r = toBeBoolean(args, ctx);
-        bool negate = getNegate(ctx, args.Holder());
 
-        if (!r)
-        {
-            v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
-            v8::Local<v8::Value> actual = args[0];
-            std::string notOrNada = negate ? "[NOT] " : "";
-            std::cout << notOrNada << "Expected: false" << std::endl;
-            std::cout << notOrNada << "Received: " << *v8::String::Utf8Value(ctx->GetIsolate(), actual) << std::endl;
+        if (r)
             return;
-        }
 
-        std::cout << "Test passed" << std::endl;
+        bool negate = getNegate(ctx, args.Holder());
+        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
 
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + "Boolean";
+        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
+
+        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -233,18 +268,19 @@ namespace testMatcher
         v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
 
         bool r = toBeTrue(args, ctx);
-        bool negate = getNegate(ctx, args.Holder());
 
-        if (!r)
-        {
-            v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
-            std::string notOrNada = negate ? "[NOT] " : "";
-            std::cout << notOrNada << "Expected: true" << std::endl;
-            std::cout << notOrNada << "Received: " << *v8::String::Utf8Value(ctx->GetIsolate(), expected) << std::endl;
+        if (r)
             return;
-        }
 
-        std::cout << "Test passed" << std::endl;
+        bool negate = getNegate(ctx, args.Holder());
+        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + "true";
+        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+
+        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -270,19 +306,120 @@ namespace testMatcher
         v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
 
         bool r = toBeFalse(args, ctx);
+
+        if (r)
+            return;
+
+        bool negate = getNegate(ctx, args.Holder());
+        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + "false";
+        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+
+        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        return;
+    }
+
+    bool toBeArray(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
+    {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handleScope(isolate);
+
+        bool negate = getNegate(ctx, args.Holder());
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+
+        bool result = expected->IsArray();
+
+        if (negate)
+            result = !result;
+
+        args.GetReturnValue().Set(result ? v8::True(isolate) : v8::False(isolate));
+        return result;
+    }
+
+    void toBeArrayCallback(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
+
+        bool r = toBeArray(args, ctx);
+
+        if (r)
+            return;
+
         bool negate = getNegate(ctx, args.Holder());
 
-        if (!r)
+        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+
+        std::string outExpected = notOrNada + "Array";
+        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
+
+        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        return;
+    }
+
+    bool toBeArrayOfSize(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
+    {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handleScope(isolate);
+
+        if (args.Length() != 1)
         {
-            v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
-            v8::Local<v8::Value> actual = args[0];
-            std::string notOrNada = negate ? "[NOT] " : "";
-            std::cout << notOrNada << "Expected: false" << std::endl;
-            std::cout << notOrNada << "Received: " << *v8::String::Utf8Value(ctx->GetIsolate(), actual) << std::endl;
-            return;
+            Senkora::throwException(ctx, "toBeArrayOfSize() requires 1 argument");
+            return false;
         }
 
-        std::cout << "Test passed" << std::endl;
+        bool negate = getNegate(ctx, args.Holder());
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        bool result = expected->IsArray();
+
+        if (result)
+        {
+            v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(expected);
+            result = array->Length() == actual->NumberValue(ctx).FromJust();
+        }
+
+        if (negate)
+            result = !result;
+
+        args.GetReturnValue().Set(result ? v8::True(isolate) : v8::False(isolate));
+        return result;
+    }
+
+    void toBeArrayOfSizeCallback(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
+
+        bool r = toBeArrayOfSize(args, ctx);
+
+        if (r)
+            return;
+
+        bool negate = getNegate(ctx, args.Holder());
+        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + "Array of size " + std::to_string(actual->ToInteger(ctx).ToLocalChecked()->Value());
+        std::string outReceived = "";
+
+        if (expected->IsArray())
+            outReceived = "Array of size " + std::to_string(v8::Local<v8::Array>::Cast(expected)->Length());
+        else
+            outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+
+        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 }

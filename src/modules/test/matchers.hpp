@@ -21,4 +21,11 @@ namespace testMatcher
 
     bool toBeBoolean(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
     void toBeBooleanCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    // Array - Related
+    bool toBeArray(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
+    void toBeArrayCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    bool toBeArrayOfSize(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
+    void toBeArrayOfSizeCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
 }
