@@ -7,12 +7,15 @@ Keep your line between 80 to 120 characters long. It will easily fit in most mon
 Use 4 spaces of indentation and max 3 nesting depth
 
 ```c
-void fn() {
+void fn()
+{
     if (/*...*/) { // 1
         if (/*...*/) { // 2
             if (/*...*/) { // 3
                 // not okay
                 if (/*...*/);
+// ...
+}
 ```
 
 Having too much nesting can lead to high cognitive complexity and makes the code worse readable
