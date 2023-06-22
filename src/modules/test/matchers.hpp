@@ -2,7 +2,6 @@
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 
-#include <iostream>
 #include <Senkora.hpp>
 #include "../modules.hpp"
 #include <v8.h>
