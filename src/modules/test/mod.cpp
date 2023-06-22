@@ -36,6 +36,7 @@ namespace testMod
         }
 
         v8::Local<v8::Function> fn = args[1].As<v8::Function>();
+        ctx->SetEmbedderData(158, args[0]);
         fn->Call(ctx, ctx->Global(), 0, nullptr);
     }
 
@@ -69,7 +70,38 @@ namespace testMod
         // create a new object with the id
         v8::Local<v8::Object> testObj = v8::Object::New(isolate);
         testObj->Set(ctx, v8::String::NewFromUtf8(isolate, "id").ToLocalChecked(), args[0]).Check();
+
+        std::string parentName = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(158)->ToString(ctx).ToLocalChecked());
+
+        ctx->SetEmbedderData(159, v8::Boolean::New(isolate, true));
         fn->Call(ctx, ctx->Global(), 0, nullptr);
+
+        v8::Local<v8::Value> r = ctx->GetEmbedderData(159);
+
+        std::string reset = "\033[0m";
+
+        if (r->IsBoolean() && r->IsFalse()) {
+            std::string errStr = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(160)->ToString(ctx).ToLocalChecked());
+            std::string red = "\033[31m";
+
+            std::cout << red << "✗ " << parentName
+                << reset << " > " << red 
+                << *v8::String::Utf8Value(isolate, args[0]->ToString(ctx).ToLocalChecked())
+                << reset << std::endl;
+
+            std::cout << errStr << std::endl;
+            return;
+        } else if (r->IsBoolean() && r->IsTrue()) {
+            std::string green = "\033[32m";
+
+            // check mark, also mention the 
+            std::cout << green << "✓ " << parentName
+                << reset << " > " << green 
+                << *v8::String::Utf8Value(isolate, args[0]->ToString(ctx).ToLocalChecked())
+                << reset << std::endl;
+        }
+
+        args.GetReturnValue().Set(r);
     }
 
     void expect(const v8::FunctionCallbackInfo<v8::Value> &args)
@@ -78,6 +110,10 @@ namespace testMod
         v8::Isolate::Scope isolateScope(isolate);
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
         v8::Context::Scope contextScope(ctx);
+
+        if (ctx->GetEmbedderData(159)->IsFalse()) {
+            return;
+        }
 
         v8::Local<v8::Object> expectObj = v8::Object::New(isolate);
 
@@ -93,6 +129,12 @@ namespace testMod
         v8::Local<v8::Function> toBeBooleanFn = v8::Function::New(ctx, testMatcher::toBeBooleanCallback)
                                                 .ToLocalChecked();
 
+        v8::Local<v8::Function> toBeArrayFn = v8::Function::New(ctx, testMatcher::toBeArrayCallback)
+                                                .ToLocalChecked();
+
+        v8::Local<v8::Function> toBeArrayOfSizeFn = v8::Function::New(ctx, testMatcher::toBeArrayOfSizeCallback)
+                                                .ToLocalChecked();
+
         if (args.Length() != 0 && args.Length() > 1)
         {
             Senkora::throwException(ctx, "Max. allowed: 1 argument");
@@ -100,9 +142,11 @@ namespace testMod
         }
 
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toEqual").ToLocalChecked(), toEqualFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeBoolean").ToLocalChecked(), toBeBooleanFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeTrue").ToLocalChecked(), toBeTrueFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeFalse").ToLocalChecked(), toBeFalseFn).Check();
-        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeBoolean").ToLocalChecked(), toBeBooleanFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeArray").ToLocalChecked(), toBeArrayFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeArrayOfSize").ToLocalChecked(), toBeArrayOfSizeFn).Check();
 
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "negate").ToLocalChecked(), v8::Boolean::New(isolate, false)).Check();
 

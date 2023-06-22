@@ -60,4 +60,33 @@ describe("expect()", () => {
         expect(null).not.toBeFalse();
         expect(undefined).not.toBeFalse();
     });
+
+    // Array - Related
+    test("toBeArray()", () => {
+        expect([1, 2, 3]).toBeArray();
+        expect(new Array(1, 2, 3)).toBeArray();
+        expect([]).toBeArray();
+        expect({ a: 1, b: 2, c: 3 }).not.toBeArray();
+        expect(1).not.toBeArray();
+        expect("Hello, Senkora!").not.toBeArray();
+        expect(true).not.toBeArray();
+        expect(false).not.toBeArray();
+        expect(null).not.toBeArray();
+        expect(undefined).not.toBeArray();
+    });
+    
+    test("toBeArrayOfSize()", () => {
+        expect([1, 2, 3]).toBeArrayOfSize(3);
+        expect(new Array(1, 2, 3)).toBeArrayOfSize(3);
+        expect([1, 2, 3]).not.toBeArrayOfSize(4);
+        expect(new Array(1, 2, 3)).not.toBeArrayOfSize(4);
+        expect([]).toBeArrayOfSize(0);
+        expect({ a: 1, b: 2, c: 3 }).not.toBeArrayOfSize(3);
+        expect(1).not.toBeArrayOfSize(1);
+        expect("Hello, Senkora!").not.toBeArrayOfSize(13);
+        expect(true).not.toBeArrayOfSize(1);
+        expect(false).not.toBeArrayOfSize(1);
+        expect(null).not.toBeArrayOfSize(1);
+        expect(undefined).not.toBeArrayOfSize(1);
+    });
 });
