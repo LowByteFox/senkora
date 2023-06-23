@@ -1,7 +1,7 @@
 #include "v8-isolate.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
-
+#include "v8-promise.h"
 #include <Senkora.hpp>
 #include "matchers.hpp"
 #include "../modules.hpp"
@@ -68,14 +68,23 @@ namespace testMod
 
         v8::Local<v8::Function> fn = args[1].As<v8::Function>();
 
-        // create a new object with the id
-        v8::Local<v8::Object> testObj = v8::Object::New(isolate);
-        testObj->Set(ctx, v8::String::NewFromUtf8(isolate, "id").ToLocalChecked(), args[0]).Check();
-
         std::string parentName = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(158)->ToString(ctx).ToLocalChecked());
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(isolate, true));
-        fn->Call(ctx, ctx->Global(), 0, nullptr);
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("promise"), v8::Boolean::New(isolate, false));
+
+        v8::Local<v8::Value> result = fn->Call(ctx, ctx->Global(), 0, nullptr).ToLocalChecked();
+
+        if (result->IsPromise()) {
+            auto promise = result.As<v8::Promise>();
+
+            if (result.As<v8::Promise>()->State() == v8::Promise::PromiseState::kPending)
+            {
+                printf("%s%sWARNING%s: Test has a promise, this is not supported yet\n", testConst::getColor("red").c_str(), testConst::getColor("bold").c_str(), testConst::getColor("reset").c_str());
+            } else {
+                result = promise->Result();
+            }
+        }
 
         v8::Local<v8::Value> r = ctx->GetEmbedderData(159);
 

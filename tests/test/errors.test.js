@@ -55,3 +55,14 @@ describe("expect()", () => {
         expect(false).not.toBeFalse();
     });
 });
+
+describe("Adavanced", () => {
+
+    // async function quickReturn() { return "Hello" }; <= This will work
+    function notQuickReturn() { return new Promise(resolve => setTimeout(() => resolve("Hello!"), 100)) }; // <= Throw a warning
+
+    // Should throw: "Warning: Test has a promise, this is not supported yet"
+    test("Async Warning", async () => {
+        expect(await notQuickReturn()).toEqual("hi!");
+    });
+});
