@@ -57,7 +57,6 @@ describe("expect()", () => {
 });
 
 describe("Adavanced", () => {
-
     // async function quickReturn() { return "Hello" }; <= This will work
     function notQuickReturn() { return new Promise(resolve => setTimeout(() => resolve("Hello!"), 100)) }; // <= Throw a warning
 
