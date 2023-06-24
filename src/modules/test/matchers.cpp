@@ -12,6 +12,16 @@ extern const Senkora::SharedGlobals globals;
 
 namespace testMatcher
 {
+    std::string stringifyForOutput(v8::Local<v8::Context> ctx, v8::Local<v8::Value> value)
+    {
+       if (value->IsObject()) {
+            auto _value = value.As<v8::Object>();
+            return *v8::String::Utf8Value(ctx->GetIsolate(), v8::JSON::Stringify(ctx, _value).ToLocalChecked());
+        } else {
+            return *v8::String::Utf8Value(ctx->GetIsolate(), value);
+       }
+    }
+
     v8::Local<v8::Value> callbackErrOutput(v8::Local<v8::Context> ctx, std::string lineone, std::string linetwo)
     {
         // get file path and line number
@@ -76,11 +86,19 @@ namespace testMatcher
             v8::Local<v8::Value> exAr = expectedArray->Get(ctx, i).ToLocalChecked();
             v8::Local<v8::Value> acAr = actualArray->Get(ctx, i).ToLocalChecked();
 
-            if (!expectedArray->Get(ctx, i).ToLocalChecked()->StrictEquals(actualArray->Get(ctx, i).ToLocalChecked()))
-            {
-                result = false;
-                break;
+            if (exAr->IsObject() && acAr->IsObject()) {
+                auto _expAr = exAr.As<v8::Object>();
+                auto _acpAr = acAr.As<v8::Object>();
+
+                v8::Local<v8::Array> expectedKeys = _expAr->GetOwnPropertyNames(ctx).ToLocalChecked();
+                v8::Local<v8::Array> actualKeys = _acpAr->GetOwnPropertyNames(ctx).ToLocalChecked();
+
+                compareObjects(ctx, expectedKeys, actualKeys, _expAr, _acpAr, result);
+            } else {
+                result = expectedArray->Get(ctx, i).ToLocalChecked()->StrictEquals(actualArray->Get(ctx, i).ToLocalChecked());
             }
+
+            break;
         }
     }
 
@@ -101,11 +119,16 @@ namespace testMatcher
             v8::Local<v8::Value> expectedValue = expectedObject->Get(ctx, expectedKey).ToLocalChecked();
             v8::Local<v8::Value> actualValue = actualObject->Get(ctx, actualKey).ToLocalChecked();
 
-            if (!expectedValue->StrictEquals(actualValue))
-            {
-                result = false;
-                break;
+            if (expectedValue->IsArray() && expectedValue->IsArray()) {
+                auto _expValue = expectedValue.As<v8::Array>();
+                auto _acpValue = expectedValue.As<v8::Array>();
+
+                compareArrays(ctx, _expValue, _acpValue, result);
+            } else {
+                result = expectedValue->StrictEquals(actualValue);
             }
+
+            break;
         }
     }
 
@@ -185,8 +208,8 @@ namespace testMatcher
         v8::Local<v8::Value> actual = args[0];
 
         std::string notOrNada = negate ? "[Not] " : "";
-        std::string outExpected = notOrNada + *v8::String::Utf8Value(ctx->GetIsolate(), expected);
-        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
+        std::string outExpected = notOrNada + stringifyForOutput(ctx, expected); *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+        std::string outReceived = stringifyForOutput(ctx, actual);
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
@@ -222,11 +245,10 @@ namespace testMatcher
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
-        v8::Local<v8::Value> actual = args[0];
 
         std::string notOrNada = negate ? "[Not] " : "";
-        std::string outExpected = notOrNada + "Boolean";
-        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
+        std::string outExpected = notOrNada + "boolean";
+        std::string outReceived = stringifyForOutput(ctx, expected->TypeOf(ctx->GetIsolate()));
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
@@ -270,7 +292,7 @@ namespace testMatcher
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         std::string notOrNada = negate ? "[Not] " : "";
         std::string outExpected = notOrNada + "true";
-        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+        std::string outReceived = stringifyForOutput(ctx, expected);
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
@@ -308,7 +330,7 @@ namespace testMatcher
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         std::string notOrNada = negate ? "[Not] " : "";
         std::string outExpected = notOrNada + "false";
-        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+        std::string outReceived = stringifyForOutput(ctx, expected);
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
@@ -350,7 +372,7 @@ namespace testMatcher
         std::string notOrNada = negate ? "[Not] " : "";
 
         std::string outExpected = notOrNada + "Array";
-        std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
+        std::string outReceived = stringifyForOutput(ctx, actual);
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
@@ -409,7 +431,7 @@ namespace testMatcher
         if (expected->IsArray())
             outReceived = "Array of size " + std::to_string(v8::Local<v8::Array>::Cast(expected)->Length());
         else
-            outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
+            outReceived = stringifyForOutput(ctx, expected);
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;

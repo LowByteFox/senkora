@@ -27,4 +27,11 @@ namespace testMatcher
 
     bool toBeArrayOfSize(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
     void toBeArrayOfSizeCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedKeys, v8::Local<v8::Array> &actualKeys,
+                        v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result);
+
+    void compareArrays(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedArray, v8::Local<v8::Array> &actualArray, bool &result);
+
+    std::string stringifyForOutput(v8::Local<v8::Context> ctx, v8::Local<v8::Value> value);
 }
