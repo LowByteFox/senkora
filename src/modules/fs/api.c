@@ -51,10 +51,7 @@ char *readFromFile(const char *filename)
 
 int deleteFile(const char *filename)
 {
-    char command[256];
-    sprintf(command, "rm %s", filename);
-
-    if (system(command) == 0)
+    if (unlink(filename) == 0)
     {
         return 1;
     }
@@ -66,10 +63,7 @@ int deleteFile(const char *filename)
 
 int deleteDirectory(const char *dirname)
 {
-    char command[256];
-    sprintf(command, "rm -r %s", dirname);
-
-    if (system(command) == 0)
+    if (rmdir(dirname) == 0)
     {
         return 1;
     }
@@ -130,10 +124,7 @@ int existsDirectory(const char *dirname)
 
 int createDirectory(const char *dirname)
 {
-    char command[256];
-    sprintf(command, "mkdir %s", dirname);
-
-    if (system(command) == 0)
+    if (mkdir(dirname, 0777) == 0)
     {
         return 1;
     }
