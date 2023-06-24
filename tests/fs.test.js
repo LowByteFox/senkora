@@ -63,6 +63,17 @@ describe("fs - Advanced", () => {
             expect(data).toEqual(str.repeat(i));
         };
     });
+
+    test("deleteDirectory() - Recursive", () => {
+        const tmp = "/tmp/senkora_test-" + date;
+        createDirectory(tmp);
+        expect(existsDirectory(tmp)).toBeTrue();
+        writeToFile(tmp + "/test.txt", "Senkora");
+        expect(existsFile(tmp + "/test.txt")).toBeTrue();
+        deleteDirectory(tmp, true);
+        expect(existsDirectory(tmp)).toBeFalse();
+        expect(existsFile(tmp + "/test.txt")).toBeFalse();
+    });
 });
 
 describe("Cleanup", () => {
