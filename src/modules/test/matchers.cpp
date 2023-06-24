@@ -90,10 +90,7 @@ namespace testMatcher
                 auto _expAr = exAr.As<v8::Object>();
                 auto _acpAr = acAr.As<v8::Object>();
 
-                v8::Local<v8::Array> expectedKeys = _expAr->GetOwnPropertyNames(ctx).ToLocalChecked();
-                v8::Local<v8::Array> actualKeys = _acpAr->GetOwnPropertyNames(ctx).ToLocalChecked();
-
-                compareObjects(ctx, expectedKeys, actualKeys, _expAr, _acpAr, result);
+                compareObjects(ctx, _expAr, _acpAr, result);
             } else {
                 result = expectedArray->Get(ctx, i).ToLocalChecked()->StrictEquals(actualArray->Get(ctx, i).ToLocalChecked());
             }
@@ -102,9 +99,17 @@ namespace testMatcher
         }
     }
 
-    void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedKeys, v8::Local<v8::Array> &actualKeys,
-                        v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result)
+    void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result)
     {
+        v8::Local<v8::Array> expectedKeys = expectedObject->GetOwnPropertyNames(ctx).ToLocalChecked();
+        v8::Local<v8::Array> actualKeys = actualObject->GetOwnPropertyNames(ctx).ToLocalChecked();
+
+        if (expectedKeys->Length() != actualKeys->Length())
+        {
+            result = false;
+            return;
+        }
+
         for (uint32_t i = 0; i < expectedKeys->Length(); i++)
         {
             v8::Local<v8::Value> expectedKey = expectedKeys->Get(ctx, i).ToLocalChecked();
@@ -113,22 +118,27 @@ namespace testMatcher
             if (!expectedKey->StrictEquals(actualKey))
             {
                 result = false;
-                break;
+                return;
             }
 
             v8::Local<v8::Value> expectedValue = expectedObject->Get(ctx, expectedKey).ToLocalChecked();
             v8::Local<v8::Value> actualValue = actualObject->Get(ctx, actualKey).ToLocalChecked();
 
-            if (expectedValue->IsArray() && expectedValue->IsArray()) {
-                auto _expValue = expectedValue.As<v8::Array>();
-                auto _acpValue = expectedValue.As<v8::Array>();
+            if (expectedValue->IsObject() && actualValue->IsObject()) {
+                auto _expVal = expectedValue.As<v8::Object>();
+                auto _acpVal = actualValue.As<v8::Object>();
 
-                compareArrays(ctx, _expValue, _acpValue, result);
+                compareObjects(ctx, _expVal, _acpVal, result);
+            } else if (expectedValue->IsArray() && actualValue->IsArray()) {
+                auto _expVal = expectedValue.As<v8::Array>();
+                auto _acpVal = actualValue.As<v8::Array>();
+
+                compareArrays(ctx, _expVal, _acpVal, result);
             } else {
                 result = expectedValue->StrictEquals(actualValue);
             }
 
-            break;
+            return;
         }
     }
 
@@ -169,17 +179,7 @@ namespace testMatcher
             v8::Local<v8::Object> expectedObject = expected.As<v8::Object>();
             v8::Local<v8::Object> actualObject = actual.As<v8::Object>();
 
-            v8::Local<v8::Array> expectedKeys = expectedObject->GetOwnPropertyNames(ctx).ToLocalChecked();
-            v8::Local<v8::Array> actualKeys = actualObject->GetOwnPropertyNames(ctx).ToLocalChecked();
-
-            if (expectedKeys->Length() != actualKeys->Length())
-            {
-                result = false;
-            }
-            else
-            {
-                compareObjects(ctx, expectedKeys, actualKeys, expectedObject, actualObject, result);
-            }
+            compareObjects(ctx, expectedObject, actualObject, result);
         }
         else
         {
