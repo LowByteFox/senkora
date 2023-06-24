@@ -1,11 +1,12 @@
 #include "v8-isolate.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
-
+#include "v8-promise.h"
 #include <Senkora.hpp>
 #include "matchers.hpp"
 #include "../modules.hpp"
 #include <v8.h>
+#include "constants.hpp"
 
 namespace testMod
 {
@@ -36,7 +37,7 @@ namespace testMod
         }
 
         v8::Local<v8::Function> fn = args[1].As<v8::Function>();
-        ctx->SetEmbedderData(158, args[0]);
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("describe"), args[0]);
         fn->Call(ctx, ctx->Global(), 0, nullptr);
     }
 
@@ -67,38 +68,38 @@ namespace testMod
 
         v8::Local<v8::Function> fn = args[1].As<v8::Function>();
 
-        // create a new object with the id
-        v8::Local<v8::Object> testObj = v8::Object::New(isolate);
-        testObj->Set(ctx, v8::String::NewFromUtf8(isolate, "id").ToLocalChecked(), args[0]).Check();
-
         std::string parentName = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(158)->ToString(ctx).ToLocalChecked());
 
-        ctx->SetEmbedderData(159, v8::Boolean::New(isolate, true));
-        fn->Call(ctx, ctx->Global(), 0, nullptr);
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(isolate, true));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("promise"), v8::Boolean::New(isolate, false));
+
+        v8::Local<v8::Value> result = fn->Call(ctx, ctx->Global(), 0, nullptr).ToLocalChecked();
+
+        if (result->IsPromise()) {
+            auto promise = result.As<v8::Promise>();
+
+            if (result.As<v8::Promise>()->State() == v8::Promise::PromiseState::kPending)
+            {
+                printf("%s%sWARNING%s: Test has a promise, this is not supported yet\n", testConst::getColor("red").c_str(), testConst::getColor("bold").c_str(), testConst::getColor("reset").c_str());
+            } else {
+                result = promise->Result();
+            }
+        }
 
         v8::Local<v8::Value> r = ctx->GetEmbedderData(159);
 
-        std::string reset = "\033[0m";
-
-        if (r->IsBoolean() && r->IsFalse()) {
+        if (r->IsBoolean() && r->IsFalse())
+        {
             std::string errStr = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(160)->ToString(ctx).ToLocalChecked());
-            std::string red = "\033[31m";
 
-            std::cout << red << "✗ " << parentName
-                << reset << " > " << red 
-                << *v8::String::Utf8Value(isolate, args[0]->ToString(ctx).ToLocalChecked())
-                << reset << std::endl;
-
-            std::cout << errStr << std::endl;
+            printf("%s✗ %s%s > %s%s%s\n", testConst::getColor("red").c_str(), parentName.c_str(), testConst::getColor("reset").c_str(), testConst::getColor("red").c_str(), *v8::String::Utf8Value(isolate, args[0]->ToString(ctx).ToLocalChecked()), testConst::getColor("reset").c_str());
+            printf("%s\n", errStr.c_str());
             return;
-        } else if (r->IsBoolean() && r->IsTrue()) {
-            std::string green = "\033[32m";
-
-            // check mark, also mention the 
-            std::cout << green << "✓ " << parentName
-                << reset << " > " << green 
-                << *v8::String::Utf8Value(isolate, args[0]->ToString(ctx).ToLocalChecked())
-                << reset << std::endl;
+        }
+        else if (r->IsBoolean() && r->IsTrue())
+        {
+            // check mark, also mention the
+            printf("%s✓ %s %s> %s%s%s\n", testConst::getColor("green").c_str(), parentName.c_str(), testConst::getColor("reset").c_str(), testConst::getColor("green").c_str(), *v8::String::Utf8Value(isolate, args[0]->ToString(ctx).ToLocalChecked()), testConst::getColor("reset").c_str());
         }
 
         args.GetReturnValue().Set(r);
@@ -111,7 +112,8 @@ namespace testMod
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
         v8::Context::Scope contextScope(ctx);
 
-        if (ctx->GetEmbedderData(159)->IsFalse()) {
+        if (ctx->GetEmbedderData(159)->IsFalse())
+        {
             return;
         }
 
@@ -121,19 +123,19 @@ namespace testMod
                                                 .ToLocalChecked();
 
         v8::Local<v8::Function> toBeTrueFn = v8::Function::New(ctx, testMatcher::toBeTrueCallback)
-                                                .ToLocalChecked();
+                                                 .ToLocalChecked();
 
         v8::Local<v8::Function> toBeFalseFn = v8::Function::New(ctx, testMatcher::toBeFalseCallback)
-                                                .ToLocalChecked();
+                                                  .ToLocalChecked();
 
         v8::Local<v8::Function> toBeBooleanFn = v8::Function::New(ctx, testMatcher::toBeBooleanCallback)
-                                                .ToLocalChecked();
+                                                    .ToLocalChecked();
 
         v8::Local<v8::Function> toBeArrayFn = v8::Function::New(ctx, testMatcher::toBeArrayCallback)
-                                                .ToLocalChecked();
+                                                  .ToLocalChecked();
 
         v8::Local<v8::Function> toBeArrayOfSizeFn = v8::Function::New(ctx, testMatcher::toBeArrayOfSizeCallback)
-                                                .ToLocalChecked();
+                                                        .ToLocalChecked();
 
         if (args.Length() != 0 && args.Length() > 1)
         {
@@ -150,12 +152,15 @@ namespace testMod
 
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "negate").ToLocalChecked(), v8::Boolean::New(isolate, false)).Check();
 
-        if (args.Length() == 1){
+        if (args.Length() == 1)
+        {
             expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "expected").ToLocalChecked(), args[0]).Check();
-        } else {
+        }
+        else
+        {
             expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "expected").ToLocalChecked(), v8::Undefined(isolate)).Check();
         }
-        
+
         expectObj->SetAccessor(
                      ctx,
                      v8::String::NewFromUtf8(isolate, "not").ToLocalChecked(),

@@ -2,11 +2,11 @@
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 
-#include <iostream>
 #include <Senkora.hpp>
 #include "../modules.hpp"
 #include <v8.h>
 #include "matchers.hpp"
+#include "constants.hpp"
 
 extern const Senkora::SharedGlobals globals;
 
@@ -26,18 +26,10 @@ namespace testMatcher
         int lineNumber = stackFrame->GetLineNumber();
         std::string lineAsStr = std::to_string(lineNumber);
 
-        // ANSI color codes for different text styles
-        std::string reset = "\033[0m";
-        std::string bold = "\033[1m";
-        std::string red = "\033[31m";
-        std::string green = "\033[32m";
-        std::string yellow = "\033[33m";
-        std::string gray = "\033[90m";
-
         // print error message
-        std::string _lineone = red + bold + "Expected: " + reset + red + lineone + reset + "\n";
-        std::string _linetwo = yellow + bold + "Received: " + reset + yellow + linetwo + reset + "\n";
-        std::string _lastline = "   at " + gray + fileName + ":" + lineAsStr + reset + "\n";
+        std::string _lineone = testConst::getColor("red") + testConst::getColor("bold") + "Expected: " + testConst::getColor("reset") + testConst::getColor("red") + lineone + testConst::getColor("reset") + "\n";
+        std::string _linetwo = testConst::getColor("yellow") + testConst::getColor("bold") + "Received: " + testConst::getColor("reset") + testConst::getColor("yellow") + linetwo + testConst::getColor("reset") + "\n";
+        std::string _lastline = "   at " + testConst::getColor("gray") + fileName + ":" + lineAsStr + testConst::getColor("reset") + "\n";
 
         return v8::String::NewFromUtf8(ctx->GetIsolate(), (_lineone + _linetwo + _lastline).c_str()).ToLocalChecked();
     }
@@ -187,7 +179,7 @@ namespace testMatcher
             return;
 
         bool negate = getNegate(ctx, args.Holder());
-        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         v8::Local<v8::Value> actual = args[0];
@@ -196,7 +188,7 @@ namespace testMatcher
         std::string outExpected = notOrNada + *v8::String::Utf8Value(ctx->GetIsolate(), expected);
         std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
 
-        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -227,7 +219,7 @@ namespace testMatcher
             return;
 
         bool negate = getNegate(ctx, args.Holder());
-        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         v8::Local<v8::Value> actual = args[0];
@@ -236,7 +228,7 @@ namespace testMatcher
         std::string outExpected = notOrNada + "Boolean";
         std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
 
-        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -273,14 +265,14 @@ namespace testMatcher
             return;
 
         bool negate = getNegate(ctx, args.Holder());
-        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         std::string notOrNada = negate ? "[Not] " : "";
         std::string outExpected = notOrNada + "true";
         std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
 
-        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -311,14 +303,14 @@ namespace testMatcher
             return;
 
         bool negate = getNegate(ctx, args.Holder());
-        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         std::string notOrNada = negate ? "[Not] " : "";
         std::string outExpected = notOrNada + "false";
         std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
 
-        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -350,7 +342,7 @@ namespace testMatcher
 
         bool negate = getNegate(ctx, args.Holder());
 
-        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         v8::Local<v8::Value> actual = args[0];
@@ -360,7 +352,7 @@ namespace testMatcher
         std::string outExpected = notOrNada + "Array";
         std::string outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), actual);
 
-        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 
@@ -405,7 +397,7 @@ namespace testMatcher
             return;
 
         bool negate = getNegate(ctx, args.Holder());
-        ctx->SetEmbedderData(159, v8::Boolean::New(args.GetIsolate(), r));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         v8::Local<v8::Value> actual = args[0];
@@ -419,7 +411,7 @@ namespace testMatcher
         else
             outReceived = *v8::String::Utf8Value(ctx->GetIsolate(), expected);
 
-        ctx->SetEmbedderData(160, callbackErrOutput(ctx, outExpected, outReceived));
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
 }
