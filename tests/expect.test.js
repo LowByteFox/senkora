@@ -27,6 +27,21 @@ describe("expect()", () => {
         expect(true).not.toEqual(false);
     });  
 
+    test("toBeEmpty()", () => {
+        expect("").toBeEmpty();
+        expect([]).toBeEmpty();
+        expect({}).toBeEmpty();
+        expect(new Map()).toBeEmpty();
+        expect(new Object()).toBeEmpty();
+        expect(null).toBeEmpty();
+        expect(undefined).toBeEmpty();
+        expect(0).not.toBeEmpty();
+        expect(1).not.toBeEmpty();
+        expect("Hello, Senkora!").not.toBeEmpty();
+        expect([1, 2, 3]).not.toBeEmpty();
+        expect({ a: 1, b: 2, c: 3 }).not.toBeEmpty();
+    });
+
     // Boolean - Related
     test("toBeBoolean()", () => {
         expect(true).toBeBoolean();
@@ -88,5 +103,19 @@ describe("expect()", () => {
         expect(false).not.toBeArrayOfSize(1);
         expect(null).not.toBeArrayOfSize(1);
         expect(undefined).not.toBeArrayOfSize(1);
+    });
+
+    // Object - Related
+    test("toBeObject()", () => {
+        expect({ a: 1, b: 2, c: 3 }).toBeObject();
+        expect(new Object()).toBeObject();
+        expect({}).toBeObject();
+        expect([1, 2, 3]).not.toBeObject();
+        expect(1).not.toBeObject();
+        expect("Hello, Senkora!").not.toBeObject();
+        expect(true).not.toBeObject();
+        expect(false).not.toBeObject();
+        expect(null).not.toBeObject();
+        expect(undefined).not.toBeObject();
     });
 });

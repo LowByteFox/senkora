@@ -137,6 +137,12 @@ namespace testMod
         v8::Local<v8::Function> toBeArrayOfSizeFn = v8::Function::New(ctx, testMatcher::toBeArrayOfSizeCallback)
                                                         .ToLocalChecked();
 
+        v8::Local<v8::Function> toBeEmptyFn = v8::Function::New(ctx, testMatcher::toBeEmptyCallback)
+                                                    .ToLocalChecked();
+
+        v8::Local<v8::Function> toBeObjectFn = v8::Function::New(ctx, testMatcher::toBeObjectCallback)
+                                                       .ToLocalChecked();
+
         if (args.Length() != 0 && args.Length() > 1)
         {
             Senkora::throwException(ctx, "Max. allowed: 1 argument");
@@ -149,7 +155,8 @@ namespace testMod
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeFalse").ToLocalChecked(), toBeFalseFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeArray").ToLocalChecked(), toBeArrayFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeArrayOfSize").ToLocalChecked(), toBeArrayOfSizeFn).Check();
-
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeEmpty").ToLocalChecked(), toBeEmptyFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeObject").ToLocalChecked(), toBeObjectFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "negate").ToLocalChecked(), v8::Boolean::New(isolate, false)).Check();
 
         if (args.Length() == 1)
