@@ -80,22 +80,33 @@ namespace testMatcher
 
     void compareArrays(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedArray, v8::Local<v8::Array> &actualArray, bool &result)
     {
-        int length = expectedArray->Length();
-        for (uint32_t i = 0; i < length; i++)
+        if (expectedArray->Length() != actualArray->Length())
         {
-            v8::Local<v8::Value> exAr = expectedArray->Get(ctx, i).ToLocalChecked();
-            v8::Local<v8::Value> acAr = actualArray->Get(ctx, i).ToLocalChecked();
+            result = false;
+            return;
+        }
 
-            if (exAr->IsObject() && acAr->IsObject()) {
-                auto _expAr = exAr.As<v8::Object>();
-                auto _acpAr = acAr.As<v8::Object>();
+        for (uint32_t i = 0; i < expectedArray->Length(); i++)
+        {
+            v8::Local<v8::Value> expectedValue = expectedArray->Get(ctx, i).ToLocalChecked();
+            v8::Local<v8::Value> actualValue = actualArray->Get(ctx, i).ToLocalChecked();
 
-                compareObjects(ctx, _expAr, _acpAr, result);
+            if (expectedValue->IsObject() && actualValue->IsObject()) {
+                auto _expVal = expectedValue.As<v8::Object>();
+                auto _acpVal = actualValue.As<v8::Object>();
+
+                compareObjects(ctx, _expVal, _acpVal, result);
+            } else if (expectedValue->IsArray() && actualValue->IsArray()) {
+                auto _expVal = expectedValue.As<v8::Array>();
+                auto _acpVal = actualValue.As<v8::Array>();
+
+                compareArrays(ctx, _expVal, _acpVal, result);
             } else {
-                result = expectedArray->Get(ctx, i).ToLocalChecked()->StrictEquals(actualArray->Get(ctx, i).ToLocalChecked());
+                result = expectedValue->StrictEquals(actualValue);
             }
 
-            break;
+            if (!result)
+                return;
         }
     }
 
@@ -138,7 +149,8 @@ namespace testMatcher
                 result = expectedValue->StrictEquals(actualValue);
             }
 
-            return;
+            if (!result)
+                return;
         }
     }
 
@@ -160,21 +172,14 @@ namespace testMatcher
 
         bool result = true;
 
-        if (expected->IsArray())
+        if (expected->IsArray() && actual->IsArray())
         {
             v8::Local<v8::Array> expectedArray = expected.As<v8::Array>();
             v8::Local<v8::Array> actualArray = actual.As<v8::Array>();
 
-            if (expectedArray->Length() != actualArray->Length())
-            {
-                result = false;
-            }
-            else
-            {
-                compareArrays(ctx, expectedArray, actualArray, result);
-            }
+            compareArrays(ctx, expectedArray, actualArray, result);
         }
-        else if (expected->IsObject())
+        else if (expected->IsObject() && actual->IsObject())
         {
             v8::Local<v8::Object> expectedObject = expected.As<v8::Object>();
             v8::Local<v8::Object> actualObject = actual.As<v8::Object>();
