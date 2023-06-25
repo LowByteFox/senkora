@@ -2,6 +2,7 @@
 #include <ObjectBuilder.hpp>
 #include "event.hpp"
 #include "globalThis.hpp"
+#include "peekaboo.hpp"
 
 #include "cli.hpp"
 #include "eventLoop.hpp"
@@ -21,6 +22,7 @@
 #include "v8-primitive.h"
 #include "v8-promise.h"
 #include "v8-script.h"
+#include "v8-template.h"
 #include "v8-value.h"
 #include <any>
 #include <system_error>
@@ -35,6 +37,7 @@
 #include <vector>
 #include <filesystem>
 #include <memory>
+#include <unistd.h>
 
 
 namespace fs = std::filesystem;
@@ -151,7 +154,7 @@ void createProject(const fs::path& projectName, [[maybe_unused]] std::any data) 
 }
 
 void handleProjectConfig(std::string& nextArg, Senkora::TOML::TomlNode* const& project) {
-    if (project->type == TomlTypes::TOML_TABLE && project->value.t.contains("main")) {
+    if (project->type == TomlTypes::TOML_TABLE && project->value.t.find("main") != project->value.t.end()) {
         const auto& main = project->value.t["main"];
         if (main->type == TomlTypes::TOML_STRING) {
             nextArg = main->value.s;
@@ -183,6 +186,7 @@ void run(std::string nextArg, std::any data) {
     
     v8::Local<v8::ObjectTemplate> senkoraObj = v8::ObjectTemplate::New(isolate);
     senkoraObj->Set(isolate, "version", v8::String::NewFromUtf8(isolate, "0.0.1").ToLocalChecked());
+    senkoraObj->Set(isolate, "peekaboo", v8::FunctionTemplate::New(isolate, peekaboo));
     global->Set(isolate, "Senkora", senkoraObj);
 
     isolate->SetHostInitializeImportMetaObjectCallback(Senkora::Modules::metadataHook);
@@ -227,14 +231,18 @@ void run(std::string nextArg, std::any data) {
     globals.moduleCache[filePath.c_str()] = mod;
     globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
-    if (v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver); out.IsNothing() || !out.FromJust()) {
-        Senkora::printException(ctx, mod->GetException());
-        exit(1);
+    if (v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver); out.IsNothing()) {
+        if (v8::Module::kErrored == mod->GetStatus()) {
+            Senkora::printException(ctx, mod->GetException());
+            exit(1);
+        }
     }
 
     if (v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx); mod->GetStatus() == v8::Module::kErrored && !res.IsEmpty()) {
-        Senkora::printException(ctx, mod->GetException());
-        exit(1);
+        if (v8::Module::kErrored == mod->GetStatus()) {
+            Senkora::printException(ctx, mod->GetException());
+            exit(1);
+        }
     }
 
     events::Run(globals.globalLoop.get());
@@ -243,7 +251,7 @@ void run(std::string nextArg, std::any data) {
 void runDot(std::string nextArg, std::any args) {
     if (projectConfig.get()->type != TomlTypes::TOML_NONE) {
         const auto& projectConf = projectConfig.get();
-        if (projectConf->type == TomlTypes::TOML_TABLE && projectConf->value.t.contains("project")) {
+        if (projectConf->type == TomlTypes::TOML_TABLE && projectConf->value.t.find("project") != projectConf->value.t.end()) {
             const auto& project = projectConf->value.t["project"];
             handleProjectConfig(nextArg, project.get());
         }

@@ -1,8 +1,12 @@
 #ifndef MODULES_API
 #define MODULES_API
 
+#include "v8-data.h"
+#include "v8-local-handle.h"
+#include "v8-script.h"
 #include <string>
 #include <v8.h>
+#include <vector>
 
 namespace Senkora::Modules {
     void metadataHook(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod, v8::Local<v8::Object> meta);
@@ -20,6 +24,8 @@ namespace Senkora::Modules {
         const std::vector<v8::Local<v8::String>>& export_names,
         const v8::Module::SyntheticModuleEvaluationSteps& step
     );
+
+    bool isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<std::string> exports);
 
     void setModuleExport(
         v8::Local<v8::Module> mod,

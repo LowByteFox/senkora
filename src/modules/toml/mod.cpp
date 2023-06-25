@@ -1,8 +1,10 @@
 #include "mod.hpp"
 
+#include <cstdio>
 #include <v8.h>
 #include <Senkora.hpp>
 #include "../modules.hpp"
+#include "v8-primitive.h"
 #include <memory>
 #include <ObjectBuilder.hpp>
 #include <toml.hpp>
@@ -150,6 +152,12 @@ namespace tomlMod {
 
     v8::MaybeLocal<v8::Value> init(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod) {
         v8::Isolate *isolate = ctx->GetIsolate();
+
+        bool out = Senkora::Modules::isExportAlright(ctx, mod->GetModuleRequests(), {"parse", "default"});
+        if (!out) {
+            Senkora::throwException(ctx, "Wrong imported module");
+            return v8::Boolean::New(isolate, false);
+        }
 
         v8::Local<v8::Object> default_exports = v8::Object::New(isolate);
 

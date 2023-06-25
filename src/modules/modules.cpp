@@ -4,6 +4,7 @@
 #include "toml/mod.hpp"
 #include "test/mod.hpp"
 #include "../../config.h"
+#include "v8-local-handle.h"
 #include "v8-message.h"
 #include "v8-primitive.h"
 #include "v8-script.h"
@@ -11,6 +12,7 @@
 
 #include <map>
 #include <v8.h>
+#include <bits/stdc++.h>
 #include <Senkora.hpp>
 #include <cstdio>
 #include <iostream>
@@ -97,6 +99,23 @@ namespace Senkora::Modules {
         globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
         return mod;
+    }
+
+    bool isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<std::string> exports) {
+        int length = requests->Length();
+        for (int i = 0; i < length; i++) {
+            v8::Local<v8::Data> val = requests->Get(ctx, i);
+            v8::Local<v8::ModuleRequest> req = v8::Local<v8::ModuleRequest>::Cast(val);
+
+            v8::Local<v8::String> specifier = req->GetSpecifier();
+            v8::Local<v8::Value> strVal = v8::Local<v8::Value>::Cast(specifier);
+            v8::String::Utf8Value path(ctx->GetIsolate(), strVal);
+            std::string requestedSpecifier = *path;
+
+            if (std::find(exports.begin(), exports.end(), requestedSpecifier) == exports.end()) return false;
+        }
+
+        return true;
     }
 
     v8::MaybeLocal<v8::Module> createModule(
