@@ -220,6 +220,51 @@ namespace testMatcher
         return;
     }
 
+    bool toBeEmpty(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
+    {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handleScope(isolate);
+
+        bool negate = getNegate(ctx, args.Holder());
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+
+        bool result = expected->IsUndefined() || expected->IsNull() ||
+                      expected->IsNullOrUndefined() || expected->IsFalse() ||
+                      expected->IsTrue() || expected->IsString() && expected.As<v8::String>()->Length() == 0 ||
+                      expected->IsArray() && expected.As<v8::Array>()->Length() == 0 ||
+                      expected->IsObject() && 
+                      expected.As<v8::Object>()->GetOwnPropertyNames(ctx).ToLocalChecked()->Length() == 0;
+
+        if (negate)
+            result = !result;
+
+        args.GetReturnValue().Set(result ? v8::True(isolate) : v8::False(isolate));
+        return result;
+    }
+
+    void toBeEmptyCallback(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
+
+        bool r = toBeEmpty(args, ctx);
+
+        if (r)
+            return;
+
+        bool negate = getNegate(ctx, args.Holder());
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + stringifyForOutput(ctx, expected);
+        std::string outReceived = stringifyForOutput(ctx, actual);
+
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
+        return;
+    }
+
     bool toBeBoolean(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
@@ -437,6 +482,48 @@ namespace testMatcher
             outReceived = "Array of size " + std::to_string(v8::Local<v8::Array>::Cast(expected)->Length());
         else
             outReceived = stringifyForOutput(ctx, expected);
+
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
+        return;
+    }
+
+    bool toBeObject(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
+    {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handleScope(isolate);
+
+        bool negate = getNegate(ctx, args.Holder());
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+
+        bool result = expected->IsObject() && !expected->IsArray();
+
+        if (negate)
+            result = !result;
+
+        args.GetReturnValue().Set(result ? v8::True(isolate) : v8::False(isolate));
+        return result;
+    }
+
+    void toBeObjectCallback(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
+
+        bool r = toBeObject(args, ctx);
+
+        if (r)
+            return;
+
+        bool negate = getNegate(ctx, args.Holder());
+
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+
+        std::string outExpected = notOrNada + "Object";
+        std::string outReceived = stringifyForOutput(ctx, actual);
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
