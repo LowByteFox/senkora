@@ -153,12 +153,6 @@ namespace tomlMod {
     v8::MaybeLocal<v8::Value> init(v8::Local<v8::Context> ctx, v8::Local<v8::Module> mod) {
         v8::Isolate *isolate = ctx->GetIsolate();
 
-        bool out = Senkora::Modules::isExportAlright(ctx, mod->GetModuleRequests(), {"parse", "default"});
-        if (!out) {
-            Senkora::throwException(ctx, "Wrong imported module");
-            return v8::Boolean::New(isolate, false);
-        }
-
         v8::Local<v8::Object> default_exports = v8::Object::New(isolate);
 
         v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, "parse").ToLocalChecked();

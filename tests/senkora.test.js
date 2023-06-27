@@ -16,5 +16,8 @@ describe("Senkora", () => {
             // and you don't want to make the function async
             println(Senkora.peekaboo(prom));
         });
+
+        const [ret, err] = Senkora.peekaboo(prom);
+        expect([ret, err]).toEqual([null, new SenkoraError("Promise is not Fulfilled")]);
     });
 });

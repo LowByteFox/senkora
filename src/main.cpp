@@ -1,5 +1,6 @@
 #include <Senkora.hpp>
 #include <ObjectBuilder.hpp>
+#include "Error.hpp"
 #include "event.hpp"
 #include "globalThis.hpp"
 #include "peekaboo.hpp"
@@ -183,6 +184,7 @@ void run(std::string nextArg, std::any data) {
     globalObject::AddFunction(isolate, global, "clearTimeout", v8::FunctionTemplate::New(isolate, events::clearTimeout));
     globalObject::AddFunction(isolate, global, "clearImmediate", v8::FunctionTemplate::New(isolate, events::clearImmediate));
     globalObject::AddFunction(isolate, global, "clearInterval", v8::FunctionTemplate::New(isolate, events::clearInterval));
+    globalObject::AddFunction(isolate, global, "SenkoraError", Senkora::Error::makeError(isolate));
     
     v8::Local<v8::ObjectTemplate> senkoraObj = v8::ObjectTemplate::New(isolate);
     senkoraObj->Set(isolate, "version", v8::String::NewFromUtf8(isolate, "0.0.1").ToLocalChecked());
@@ -232,8 +234,7 @@ void run(std::string nextArg, std::any data) {
     globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
     if (v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver); out.IsNothing()) {
-        if (v8::Module::kErrored == mod->GetStatus()) {
-            Senkora::printException(ctx, mod->GetException());
+        if (v8::Module::kUninstantiated == mod->GetStatus()) {
             exit(1);
         }
     }

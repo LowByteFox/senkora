@@ -47,6 +47,7 @@ namespace Senkora {
         mutable std::map<int, std::unique_ptr<MetadataObject>> moduleMetadatas;
         mutable std::map<std::string_view, v8::Local<v8::Module>> moduleCache;
         mutable std::unique_ptr<events::EventLoop> globalLoop = events::Init();
+        mutable std::map<std::string_view, std::vector<v8::Local<v8::String>>> moduleExports;
     } SharedGlobals;
 
     std::string readFile(const std::string& name);

@@ -1,6 +1,6 @@
 import { expect, describe, test } from "senkora:test";
 import { readFromFile } from "senkora:fs";
-import { parse, xd } from "senkora:toml";
+import { parse } from "senkora:toml";
 
 const content = readFromFile("test.toml");
 

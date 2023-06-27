@@ -3,6 +3,7 @@
 
 #include "v8-data.h"
 #include "v8-local-handle.h"
+#include "v8-primitive.h"
 #include "v8-script.h"
 #include <string>
 #include <v8.h>
@@ -25,7 +26,7 @@ namespace Senkora::Modules {
         const v8::Module::SyntheticModuleEvaluationSteps& step
     );
 
-    bool isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<std::string> exports);
+    std::string isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<v8::Local<v8::String>> exports, v8::Local<v8::Module> mod);
 
     void setModuleExport(
         v8::Local<v8::Module> mod,

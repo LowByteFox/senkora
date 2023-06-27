@@ -60,6 +60,16 @@ namespace Senkora::Modules {
                 Senkora::throwAndPrintException(ctx, msg.c_str());
                 exit(1);
             }
+            std::string out = isExportAlright(ctx, ref->GetModuleRequests(), globals.moduleExports[base], ref);
+            if (out.length()) {
+                std::string msg = "Module \"";
+                msg += base.c_str();
+                msg += "\" doesn't export \"";
+                msg += out;
+                msg += "\"!";
+                Senkora::throwAndPrintException(ctx, msg.c_str());
+                exit(1);
+            }
             return globals.moduleCache[base];
         }
 
@@ -101,8 +111,16 @@ namespace Senkora::Modules {
         return mod;
     }
 
-    bool isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<std::string> exports) {
-        int length = requests->Length();
+    std::string isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<v8::Local<v8::String>> exports, v8::Local<v8::Module> mod) {
+        int length = exports.size();
+        std::vector<std::string> exportsVec;
+
+        for (int i = 0; i < length; i++) {
+            v8::String::Utf8Value newExport(ctx->GetIsolate(), exports[i]);
+            exportsVec.push_back(*newExport);
+        }
+
+        length = requests->Length();
         for (int i = 0; i < length; i++) {
             v8::Local<v8::Data> val = requests->Get(ctx, i);
             v8::Local<v8::ModuleRequest> req = v8::Local<v8::ModuleRequest>::Cast(val);
@@ -111,11 +129,9 @@ namespace Senkora::Modules {
             v8::Local<v8::Value> strVal = v8::Local<v8::Value>::Cast(specifier);
             v8::String::Utf8Value path(ctx->GetIsolate(), strVal);
             std::string requestedSpecifier = *path;
-
-            if (std::find(exports.begin(), exports.end(), requestedSpecifier) == exports.end()) return false;
         }
 
-        return true;
+        return "";
     }
 
     v8::MaybeLocal<v8::Module> createModule(
@@ -173,18 +189,21 @@ namespace Senkora::Modules {
         globals.moduleCache["senkora:fs"] = createModule(ctx, 
             "senkora:fs",
             fsMod::getExports(isolate), fsMod::init).ToLocalChecked();
+        globals.moduleExports["senkora:fs"] = fsMod::getExports(isolate);
         #endif
 
         #ifdef ENABLE_TOML
         globals.moduleCache["senkora:toml"] = createModule(ctx,
             "senkora:toml",
             tomlMod::getExports(isolate), tomlMod::init).ToLocalChecked();
+        globals.moduleExports["senkora:toml"] = tomlMod::getExports(isolate);
         #endif
 
         #ifdef ENABLE_TEST
         globals.moduleCache["senkora:test"] = createModule(ctx,
             "senkora:test",
             testMod::getExports(isolate), testMod::init).ToLocalChecked();
+        globals.moduleExports["senkora:test"] = testMod::getExports(isolate);
         #endif
     }
 }

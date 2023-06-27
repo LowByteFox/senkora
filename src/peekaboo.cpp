@@ -1,8 +1,11 @@
 #include "peekaboo.hpp"
+#include "Error.hpp"
 #include "Senkora.hpp"
 #include "v8-isolate.h"
 #include "v8-local-handle.h"
+#include "v8-primitive.h"
 #include "v8-promise.h"
+#include "v8-value.h"
 
 #include <v8.h>
 
@@ -25,7 +28,7 @@ void peekaboo(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Local<v8::Promise> prom = v8::Local<v8::Promise>::Cast(args[0]);
 
     if (prom->State() != v8::Promise::PromiseState::kFulfilled) {
-        Senkora::throwException(ctx, "Promise must be fulfilled");
+        args.GetReturnValue().Set(Senkora::Error::returnError(isolate, v8::Undefined(isolate), "Promise is not Fulfilled"));
         return;
     } else {
         args.GetReturnValue().Set(prom->Result());
