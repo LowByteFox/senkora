@@ -11,6 +11,9 @@ jobs:
         nix_path: nixpkgs=channel:nixos-22.11
     - run: nix-shell --run "true"
 
+    - name: Install curl
+      run: apt update && apt install curl libcurl-dev
+
     - name: Update Submodules
       run: git submodule update --init --recursive
         
