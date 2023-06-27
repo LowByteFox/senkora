@@ -70,8 +70,9 @@ namespace fetch {
     // TODO(?): Make it async
     void fetch(const v8::FunctionCallbackInfo<v8::Value> &args) {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope scope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+        v8::Context::Scope contextScope(ctx);
 
         if (args.Length() < 1) {
             Senkora::throwException(ctx, "fetch requires at least 1 argument");
