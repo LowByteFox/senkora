@@ -25,7 +25,8 @@ namespace testConst
     std::map<std::string, int> testEmbedderNums = {
         {"describe", 158},
         {"error", 159},
-        {"errorStr", 160}
+        {"errorStr", 160},
+        {"fallbackTestName", 161}
     };
 
     std::string getColor(std::string code)

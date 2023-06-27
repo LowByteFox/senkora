@@ -10,6 +10,47 @@
 
 namespace testMod
 {
+    void thenCallback(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope scope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+        v8::Local<v8::Value> r = ctx->GetEmbedderData(
+            testConst::getTestEmbedderNum("error")
+        );
+
+        std::string parentName = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(
+            testConst::getTestEmbedderNum("describe")
+        )->ToString(ctx).ToLocalChecked());
+        std::string fallbackTestName = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(
+            testConst::getTestEmbedderNum("fallbackTestName")
+        )->ToString(ctx).ToLocalChecked());
+
+        if (r->IsBoolean() && r->IsFalse())
+        {
+            std::string errStr = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(
+                testConst::getTestEmbedderNum("errorStr")
+            )->ToString(ctx).ToLocalChecked());
+
+            printf("%s✗ %s%s > %s%s%s\n", testConst::getColor("red").c_str(), parentName.c_str(),
+                   testConst::getColor("reset").c_str(), testConst::getColor("red").c_str(), fallbackTestName.c_str(), testConst::getColor("reset").c_str());
+            printf("%s\n", errStr.c_str());
+            return;
+        }
+        else if (r->IsBoolean() && r->IsTrue())
+        {
+            // check mark, also mention the
+            printf("%s✓ %s %s> %s%s%s\n",
+                   testConst::getColor("green").c_str(), parentName.c_str(), testConst::getColor("reset").c_str(),
+                   testConst::getColor("green").c_str(), fallbackTestName.c_str(), testConst::getColor("reset").c_str());
+        } else {
+            Senkora::throwException(ctx, "Error while resolving promise, expected boolean");
+        }
+
+        args.GetReturnValue().Set(r);
+    }
+
     void describe(const v8::FunctionCallbackInfo<v8::Value> &args)
     {
         v8::Isolate *isolate = args.GetIsolate();
@@ -68,29 +109,32 @@ namespace testMod
 
         v8::Local<v8::Function> fn = args[1].As<v8::Function>();
 
-        std::string parentName = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(158)->ToString(ctx).ToLocalChecked());
+        std::string parentName = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(
+            testConst::getTestEmbedderNum("describe")
+        )->ToString(ctx).ToLocalChecked());
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(isolate, true));
-        ctx->SetEmbedderData(testConst::getTestEmbedderNum("promise"), v8::Boolean::New(isolate, false));
 
         v8::Local<v8::Value> result = fn->Call(ctx, ctx->Global(), 0, nullptr).ToLocalChecked();
 
-        if (result->IsPromise()) {
+        if (result->IsPromise())
+        {
             auto promise = result.As<v8::Promise>();
 
-            if (result.As<v8::Promise>()->State() == v8::Promise::PromiseState::kPending)
-            {
-                printf("%s%sWARNING%s: Test has a promise, this is not supported yet\n", testConst::getColor("red").c_str(), testConst::getColor("bold").c_str(), testConst::getColor("reset").c_str());
-            } else {
-                result = promise->Result();
-            }
+            ctx->SetEmbedderData(testConst::getTestEmbedderNum("fallbackTestName"), args[0]);
+            promise->Then(ctx, v8::Function::New(ctx, thenCallback).ToLocalChecked()).ToLocalChecked();
+            return;
         }
 
-        v8::Local<v8::Value> r = ctx->GetEmbedderData(159);
+        v8::Local<v8::Value> r = ctx->GetEmbedderData(
+            testConst::getTestEmbedderNum("error")
+        );
 
         if (r->IsBoolean() && r->IsFalse())
         {
-            std::string errStr = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(160)->ToString(ctx).ToLocalChecked());
+            std::string errStr = *v8::String::Utf8Value(isolate, ctx->GetEmbedderData(
+                testConst::getTestEmbedderNum("errorStr")
+            )->ToString(ctx).ToLocalChecked());
 
             printf("%s✗ %s%s > %s%s%s\n", testConst::getColor("red").c_str(), parentName.c_str(), testConst::getColor("reset").c_str(), testConst::getColor("red").c_str(), *v8::String::Utf8Value(isolate, args[0]->ToString(ctx).ToLocalChecked()), testConst::getColor("reset").c_str());
             printf("%s\n", errStr.c_str());
@@ -112,7 +156,9 @@ namespace testMod
         v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
         v8::Context::Scope contextScope(ctx);
 
-        if (ctx->GetEmbedderData(159)->IsFalse())
+        if (ctx->GetEmbedderData(
+            testConst::getTestEmbedderNum("error")
+        )->IsFalse())
         {
             return;
         }

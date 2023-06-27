@@ -119,3 +119,35 @@ describe("expect()", () => {
         expect(undefined).not.toBeObject();
     });
 });
+
+// .then works
+describe("expect() - Advanced", () => {
+    // TODO: Fix it not printing the error message
+    test("Async #0", async () => {
+        expect(true).doesNotExist(true);
+    });
+
+    // TODO: Fix it printing Asnyc #2 and Async #2
+    test("Async #1", async () => {
+        const todos = await getBack([1]);
+        expect(todos).toEqual([1]);
+    });
+
+    test("Async #2", async () => {
+        const todos = await getBack(2);
+        expect(todos).toEqual(2);
+    });
+
+    // TODO?: Fix it being printing before Async #2
+    test("Normal after Async", () => {
+        expect(true).toBeTrue();
+    });
+});
+
+function getBack(arg) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve(arg);
+        }, 500);
+    });
+}
