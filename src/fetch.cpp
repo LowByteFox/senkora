@@ -103,17 +103,17 @@ namespace fetch {
         bool success = httpF::PerformHTTPRequest(url, method, body, response, status);
 
         v8::Local<v8::Object> result = v8::Object::New(isolate);
-        result->Set(ctx, v8::String::NewFromUtf8(isolate, "status").ToLocalChecked(), v8::Integer::New(isolate, status));
+        v8::Maybe<bool> _ = result->Set(ctx, v8::String::NewFromUtf8(isolate, "status").ToLocalChecked(), v8::Integer::New(isolate, status));
 
         if (success)
         {
-            result->Set(ctx, v8::String::NewFromUtf8(isolate, "ok").ToLocalChecked(), v8::Boolean::New(isolate, true));
-            result->Set(ctx, v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), v8::String::NewFromUtf8(isolate, response.c_str()).ToLocalChecked());
+            _ = result->Set(ctx, v8::String::NewFromUtf8(isolate, "ok").ToLocalChecked(), v8::Boolean::New(isolate, true));
+            _ = result->Set(ctx, v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), v8::String::NewFromUtf8(isolate, response.c_str()).ToLocalChecked());
         }
         else
         {
-            result->Set(ctx, v8::String::NewFromUtf8(isolate, "ok").ToLocalChecked(), v8::Boolean::New(isolate, false));
-            result->Set(ctx, v8::String::NewFromUtf8(isolate, "error").ToLocalChecked(), v8::String::NewFromUtf8(isolate, "Failed to perform the HTTP request").ToLocalChecked());
+            _ = result->Set(ctx, v8::String::NewFromUtf8(isolate, "ok").ToLocalChecked(), v8::Boolean::New(isolate, false));
+            _ = result->Set(ctx, v8::String::NewFromUtf8(isolate, "error").ToLocalChecked(), v8::String::NewFromUtf8(isolate, "Failed to perform the HTTP request").ToLocalChecked());
         }
 
         args.GetReturnValue().Set(result);

@@ -18,6 +18,6 @@ describe("Senkora", () => {
         });
 
         const [ret, err] = Senkora.peekaboo(prom);
-        expect([ret, err]).toEqual([null, new SenkoraError("Promise is not Fulfilled")]);
+        expect([ret, err]).toEqual([undefined, new SenkoraError("Promise is not Fulfilled")]);
     });
 });

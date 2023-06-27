@@ -87,6 +87,7 @@ namespace Senkora
     v8::MaybeLocal<v8::Module> compileScript(v8::Local<v8::Context> ctx, const std::string& code)
     {
         v8::Isolate *isolate = ctx->GetIsolate();
+        v8::Isolate::Scope isolate_scope(isolate);
 
         v8::ScriptOrigin origin(isolate,
                 v8::Local<v8::Integer>(),
@@ -94,8 +95,14 @@ namespace Senkora
         globals.lastScriptId++;
 
         v8::ScriptCompiler::Source source(v8::String::NewFromUtf8(isolate, code.c_str()).ToLocalChecked(), origin);
-
-        return v8::ScriptCompiler::CompileModule(isolate, &source);
+        {
+            v8::TryCatch tryCatch(isolate);
+            v8::MaybeLocal<v8::Module> ret = v8::ScriptCompiler::CompileModule(isolate, &source);
+            if (tryCatch.HasCaught()) {
+                Senkora::printException(ctx, tryCatch.Exception());
+            }
+            return ret;
+        }
     }
 
     v8::Local<v8::Value> throwException(v8::Local<v8::Context> ctx, const char* message, ExceptionType type) {

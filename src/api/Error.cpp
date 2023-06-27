@@ -28,7 +28,7 @@ namespace Senkora::Error {
         argv[0] = v8::String::NewFromUtf8(isolate, msg.c_str()).ToLocalChecked();
 
         v8::Local<v8::Object> instance = construct->NewInstance(ctx, 1, argv).ToLocalChecked();
-        instance->SetPrototype(ctx, construct);
+        v8::Maybe<bool> _ = instance->SetPrototype(ctx, clsTemplate->InstanceTemplate()->NewInstance(ctx).ToLocalChecked());
 
         v8::Maybe<bool> setInstance = arr->Set(ctx, 1, instance);
         return arr;
