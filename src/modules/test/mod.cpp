@@ -1,3 +1,5 @@
+#include "v8-context.h"
+#include "v8-function-callback.h"
 #include "v8-isolate.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
@@ -7,6 +9,7 @@
 #include "../modules.hpp"
 #include <v8.h>
 #include "constants.hpp"
+#include "v8-value.h"
 
 namespace testMod
 {
@@ -79,7 +82,20 @@ namespace testMod
 
         v8::Local<v8::Function> fn = args[1].As<v8::Function>();
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("describe"), args[0]);
-        fn->Call(ctx, ctx->Global(), 0, nullptr);
+        v8::MaybeLocal<v8::Value> _ = fn->Call(ctx, ctx->Global(), 0, nullptr);
+    }
+
+    void catchException(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::Isolate::Scope isolate_scope(isolate);
+        v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+        v8::Context::Scope ctx_scope(ctx);
+
+        v8::Local<v8::Value> obj = args[0];
+        if (obj->IsNativeError()) {
+            Senkora::printException(ctx, obj);
+        }
+        // not yet
     }
 
     void test(const v8::FunctionCallbackInfo<v8::Value> &args)
@@ -123,6 +139,7 @@ namespace testMod
 
             ctx->SetEmbedderData(testConst::getTestEmbedderNum("fallbackTestName"), args[0]);
             promise->Then(ctx, v8::Function::New(ctx, thenCallback).ToLocalChecked()).ToLocalChecked();
+            promise->Catch(ctx, v8::Function::New(ctx, catchException).ToLocalChecked()).ToLocalChecked();
             return;
         }
 
