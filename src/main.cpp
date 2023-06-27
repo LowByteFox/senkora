@@ -233,20 +233,28 @@ void run(std::string nextArg, std::any data) {
     globals.moduleCache[filePath.c_str()] = mod;
     globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
-    if (v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver); out.IsNothing()) {
-        if (v8::Module::kUninstantiated == mod->GetStatus()) {
-            exit(1);
-        }
-    }
+    {
+        v8::Isolate::Scope isolate_scope(isolate);
+        v8::Context::Scope ctx_scope(ctx);
+        v8::HandleScope handle_scope(isolate);
 
-    if (v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx); mod->GetStatus() == v8::Module::kErrored && !res.IsEmpty()) {
-        if (v8::Module::kErrored == mod->GetStatus()) {
-            Senkora::printException(ctx, mod->GetException());
-            exit(1);
+        v8::TryCatch tryCatch(isolate);
+        if (v8::Maybe<bool> out = mod->InstantiateModule(ctx, Senkora::Modules::moduleResolver); out.IsNothing()) {
+            if (v8::Module::kUninstantiated == mod->GetStatus()) {
+                Senkora::printException(ctx, tryCatch.Exception());
+                exit(1);
+            }
         }
-    }
 
-    events::Run(globals.globalLoop.get());
+        if (v8::MaybeLocal<v8::Value> res = mod->Evaluate(ctx); mod->GetStatus() == v8::Module::kErrored && !res.IsEmpty()) {
+            if (v8::Module::kErrored == mod->GetStatus()) {
+                Senkora::printException(ctx, mod->GetException());
+                exit(1);
+            }
+        }
+
+        events::Run(globals.globalLoop.get());
+    }
 }
 
 void runDot(std::string nextArg, std::any args) {
