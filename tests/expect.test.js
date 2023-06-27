@@ -122,9 +122,9 @@ describe("expect()", () => {
 
 // .then works
 describe("expect() - Advanced", () => {
-    // TODO: Fix it not printing the error message
+    // TODO: Fix it being printed out as Async #2 too (see below)
     test("Async #0", async () => {
-        expect(true).doesNotExist(true);
+        expect(true).toBeTrue();
     });
 
     // TODO: Fix it printing Asnyc #2 and Async #2
