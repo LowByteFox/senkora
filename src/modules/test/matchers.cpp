@@ -78,7 +78,7 @@ namespace testMatcher
         return val;
     }
 
-    void compareArrays(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedArray, v8::Local<v8::Array> &actualArray, bool &result)
+    void compareArrays(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedArray, v8::Local<v8::Array> &actualArray, bool &result, bool strict)
     {
         if (expectedArray->Length() != actualArray->Length())
         {
@@ -95,14 +95,17 @@ namespace testMatcher
                 auto _expVal = expectedValue.As<v8::Object>();
                 auto _acpVal = actualValue.As<v8::Object>();
 
-                compareObjects(ctx, _expVal, _acpVal, result);
+                compareObjects(ctx, _expVal, _acpVal, result, strict);
             } else if (expectedValue->IsArray() && actualValue->IsArray()) {
                 auto _expVal = expectedValue.As<v8::Array>();
                 auto _acpVal = actualValue.As<v8::Array>();
 
-                compareArrays(ctx, _expVal, _acpVal, result);
+                compareArrays(ctx, _expVal, _acpVal, result, strict);
             } else {
-                result = expectedValue->StrictEquals(actualValue);
+                if (strict)
+                    result = expectedValue->StrictEquals(actualValue);
+                else
+                    result = expectedValue->Equals(ctx, actualValue).FromMaybe(false);
             }
 
             if (!result)
@@ -110,7 +113,7 @@ namespace testMatcher
         }
     }
 
-    void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result)
+    void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result, bool strict)
     {
         v8::Local<v8::Array> expectedKeys = expectedObject->GetOwnPropertyNames(ctx).ToLocalChecked();
         v8::Local<v8::Array> actualKeys = actualObject->GetOwnPropertyNames(ctx).ToLocalChecked();
@@ -126,11 +129,14 @@ namespace testMatcher
             v8::Local<v8::Value> expectedKey = expectedKeys->Get(ctx, i).ToLocalChecked();
             v8::Local<v8::Value> actualKey = actualKeys->Get(ctx, i).ToLocalChecked();
 
-            if (!expectedKey->StrictEquals(actualKey))
-            {
-                result = false;
-                return;
+            if (strict) {
+                result = expectedKey->StrictEquals(actualKey);
+            } else {
+                result = expectedKey->Equals(ctx, actualKey).FromMaybe(false);
             }
+
+            if (!result)
+                return;
 
             v8::Local<v8::Value> expectedValue = expectedObject->Get(ctx, expectedKey).ToLocalChecked();
             v8::Local<v8::Value> actualValue = actualObject->Get(ctx, actualKey).ToLocalChecked();
@@ -139,14 +145,18 @@ namespace testMatcher
                 auto _expVal = expectedValue.As<v8::Object>();
                 auto _acpVal = actualValue.As<v8::Object>();
 
-                compareObjects(ctx, _expVal, _acpVal, result);
+                compareObjects(ctx, _expVal, _acpVal, result, strict);
             } else if (expectedValue->IsArray() && actualValue->IsArray()) {
                 auto _expVal = expectedValue.As<v8::Array>();
                 auto _acpVal = actualValue.As<v8::Array>();
 
-                compareArrays(ctx, _expVal, _acpVal, result);
+                compareArrays(ctx, _expVal, _acpVal, result, strict);
             } else {
-                result = expectedValue->StrictEquals(actualValue);
+                if (strict) {
+                    result = expectedValue->StrictEquals(actualValue);
+                } else {
+                    result = expectedValue->Equals(ctx, actualValue).FromMaybe(false);
+                }
             }
 
             if (!result)
@@ -177,18 +187,18 @@ namespace testMatcher
             v8::Local<v8::Array> expectedArray = expected.As<v8::Array>();
             v8::Local<v8::Array> actualArray = actual.As<v8::Array>();
 
-            compareArrays(ctx, expectedArray, actualArray, result);
+            compareArrays(ctx, expectedArray, actualArray, result, false);
         }
         else if (expected->IsObject() && actual->IsObject())
         {
             v8::Local<v8::Object> expectedObject = expected.As<v8::Object>();
             v8::Local<v8::Object> actualObject = actual.As<v8::Object>();
 
-            compareObjects(ctx, expectedObject, actualObject, result);
+            compareObjects(ctx, expectedObject, actualObject, result, false);
         }
         else
         {
-            result = expected->StrictEquals(actual);
+            result = expected->Equals(ctx, actual).FromJust();
         }
 
         if (negate)
@@ -220,6 +230,71 @@ namespace testMatcher
         return;
     }
 
+    bool toStrictEqual(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handleScope(isolate);
+
+        bool negate = getNegate(ctx, args.Holder());
+
+        if (args.Length() < 0 || args.Length() > 1)
+        {
+            Senkora::throwException(ctx, "Expected 1 argument");
+            return false;
+        }
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        bool result = true;
+
+        if (expected->IsArray() && actual->IsArray())
+        {
+            v8::Local<v8::Array> expectedArray = expected.As<v8::Array>();
+            v8::Local<v8::Array> actualArray = actual.As<v8::Array>();
+
+            compareArrays(ctx, expectedArray, actualArray, result, true);
+        }
+        else if (expected->IsObject() && actual->IsObject())
+        {
+            v8::Local<v8::Object> expectedObject = expected.As<v8::Object>();
+            v8::Local<v8::Object> actualObject = actual.As<v8::Object>();
+
+            compareObjects(ctx, expectedObject, actualObject, result, true);
+        }
+        else
+        {
+            result = expected->StrictEquals(actual);
+        }
+
+        if (negate)
+            result = !result;
+
+        args.GetReturnValue().Set(result ? v8::True(isolate) : v8::False(isolate));
+        return result;
+    }
+
+    void toStrictEqualCallback(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
+        bool r = toStrictEqual(args, ctx);
+
+        if (r)
+            return;
+
+        bool negate = getNegate(ctx, args.Holder());
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + stringifyForOutput(ctx, expected);
+        std::string outReceived = stringifyForOutput(ctx, actual);
+
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
+        return;
+    }
+    
     bool toBeEmpty(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
@@ -230,10 +305,10 @@ namespace testMatcher
 
         bool result = expected->IsUndefined() || expected->IsNull() ||
                       expected->IsNullOrUndefined() || expected->IsFalse() ||
-                      expected->IsTrue() || expected->IsString() && expected.As<v8::String>()->Length() == 0 ||
-                      expected->IsArray() && expected.As<v8::Array>()->Length() == 0 ||
-                      expected->IsObject() && 
-                      expected.As<v8::Object>()->GetOwnPropertyNames(ctx).ToLocalChecked()->Length() == 0;
+                      expected->IsTrue() || (expected->IsString() && expected.As<v8::String>()->Length() == 0) ||
+                      (expected->IsArray() && expected.As<v8::Array>()->Length() == 0) ||
+                      (expected->IsObject() && 
+                      expected.As<v8::Object>()->GetOwnPropertyNames(ctx).ToLocalChecked()->Length() == 0);
 
         if (negate)
             result = !result;
@@ -416,7 +491,6 @@ namespace testMatcher
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
-        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         v8::Local<v8::Value> actual = args[0];
 
         std::string notOrNada = negate ? "[Not] " : "";
@@ -517,7 +591,6 @@ namespace testMatcher
 
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
 
-        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
         v8::Local<v8::Value> actual = args[0];
 
         std::string notOrNada = negate ? "[Not] " : "";
