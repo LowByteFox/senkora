@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'senkora:test';
 
 const data = fetch('https://jsonplaceholder.typicode.com/todos/1');
-const data2 = fetch('Senkora'); // Fail
+const data2 = [
+    'Senkora', // not a valid URL
+    'google.com', // must be https://google.com
+].map(f => fetch(f))
 
 describe('fetch - Success', () => {
     test('status', () => {
@@ -17,16 +20,22 @@ describe('fetch - Success', () => {
     });
 });
 
-describe('fetch - Fail', () => {
+describe('fetch - Failure', () => {
     test('status', () => {
-        expect(data2.status).toEqual(0);
+        for (const d of data2) {
+            expect(d.status).toEqual(0);
+        };
     });
 
     test('error', () => {
-        expect(data2.error).toEqual('Failed to perform the HTTP request');
+        for (const d of data2) {
+            expect(d.error).toEqual('Failed to perform the HTTP request');
+        };
     });
 
     test('ok', () => {
-        expect(data2.ok).toBeFalse();
+        for (const d of data2) {
+            expect(d.ok).toBeFalse();
+        };
     });
 });

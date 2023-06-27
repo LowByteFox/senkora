@@ -7,6 +7,7 @@
 
 #include "cli.hpp"
 #include "eventLoop.hpp"
+#include "fetch.hpp"
 #include "project.hpp"
 #include "modules/modules.hpp"
 #include "v8-container.h"
@@ -178,6 +179,7 @@ void run(std::string nextArg, std::any data) {
     v8::Local<v8::ObjectTemplate> global = globalObject::Init(isolate);
     globalObject::AddFunction(isolate, global, "print", v8::FunctionTemplate::New(isolate, Print));
     globalObject::AddFunction(isolate, global, "println", v8::FunctionTemplate::New(isolate, Println));
+    globalObject::AddFunction(isolate, global, "fetch", v8::FunctionTemplate::New(isolate, fetch::fetch));
     globalObject::AddFunction(isolate, global, "setTimeout", v8::FunctionTemplate::New(isolate, events::setTimeout));
     globalObject::AddFunction(isolate, global, "setImmediate", v8::FunctionTemplate::New(isolate, events::setImmediate));
     globalObject::AddFunction(isolate, global, "setInterval", v8::FunctionTemplate::New(isolate, events::setInterval));
