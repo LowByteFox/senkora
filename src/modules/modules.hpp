@@ -26,8 +26,6 @@ namespace Senkora::Modules {
         const v8::Module::SyntheticModuleEvaluationSteps& step
     );
 
-    std::string isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<v8::Local<v8::String>> exports, v8::Local<v8::Module> mod);
-
     void setModuleExport(
         v8::Local<v8::Module> mod,
         v8::Local<v8::Context> ctx,

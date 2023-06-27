@@ -60,16 +60,7 @@ namespace Senkora::Modules {
                 Senkora::throwAndPrintException(ctx, msg.c_str());
                 exit(1);
             }
-            std::string out = isExportAlright(ctx, ref->GetModuleRequests(), globals.moduleExports[base], ref);
-            if (out.length()) {
-                std::string msg = "Module \"";
-                msg += base.c_str();
-                msg += "\" doesn't export \"";
-                msg += out;
-                msg += "\"!";
-                Senkora::throwAndPrintException(ctx, msg.c_str());
-                exit(1);
-            }
+
             return globals.moduleCache[base];
         }
 
@@ -109,29 +100,6 @@ namespace Senkora::Modules {
         globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
         return mod;
-    }
-
-    std::string isExportAlright(v8::Local<v8::Context> ctx, v8::Local<v8::FixedArray> requests, std::vector<v8::Local<v8::String>> exports, v8::Local<v8::Module> mod) {
-        int length = exports.size();
-        std::vector<std::string> exportsVec;
-
-        for (int i = 0; i < length; i++) {
-            v8::String::Utf8Value newExport(ctx->GetIsolate(), exports[i]);
-            exportsVec.push_back(*newExport);
-        }
-
-        length = requests->Length();
-        for (int i = 0; i < length; i++) {
-            v8::Local<v8::Data> val = requests->Get(ctx, i);
-            v8::Local<v8::ModuleRequest> req = v8::Local<v8::ModuleRequest>::Cast(val);
-
-            v8::Local<v8::String> specifier = req->GetSpecifier();
-            v8::Local<v8::Value> strVal = v8::Local<v8::Value>::Cast(specifier);
-            v8::String::Utf8Value path(ctx->GetIsolate(), strVal);
-            std::string requestedSpecifier = *path;
-        }
-
-        return "";
     }
 
     v8::MaybeLocal<v8::Module> createModule(
