@@ -6,5 +6,6 @@
         cmake
         pkg-config
         gnumake
+        curl
     ];
 }
