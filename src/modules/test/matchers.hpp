@@ -11,6 +11,9 @@ namespace testMatcher
     bool toEqual(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
     void toEqualCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    bool toStrictEqual(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
+    void toStrictEqualCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+    
     bool toBeEmpty(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
     void toBeEmptyCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -36,8 +39,8 @@ namespace testMatcher
     void toBeObjectCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
     
     // Helper functions
-    void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result);
-    void compareArrays(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedArray, v8::Local<v8::Array> &actualArray, bool &result);
+    void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result, bool strict);
+    void compareArrays(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedArray, v8::Local<v8::Array> &actualArray, bool &result, bool strict);
 
     std::string stringifyForOutput(v8::Local<v8::Context> ctx, v8::Local<v8::Value> value);
 }

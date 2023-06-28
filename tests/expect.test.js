@@ -14,19 +14,45 @@ describe("expect()", () => {
         expect([1, 2, 3]).toEqual([1, 2, 3]);
         expect([1, 2, 3]).not.toEqual([1, 2, 4]);
 
-        expect({ a: 1, b: 2, c: 3 }).toEqual({ a: 1, b: 2, c: 3 });
-        expect({ a: 1, b: 2, c: 3 }).not.toEqual({ a: 1, b: 2, c: 4 });
+        expect({ a: 1, b: 2, c: 3, d: undefined }).toEqual({ a: 1, b: 2, c: 3, d: null });
+        expect({ a: 1, b: 2, c: 3, d: undefined }).not.toEqual({ a: 1, b: 2, c: 4, d: null });
 
         expect(null).toEqual(null);
-        expect(null).not.toEqual(undefined);
+        expect(null).toEqual(undefined);
 
         expect(undefined).toEqual(undefined);
-        expect(undefined).not.toEqual(null);
+        expect(undefined).toEqual(null);
 
         expect(true).toEqual(true);
         expect(true).not.toEqual(false);
     });  
 
+    test("toStrictEqual()", () => {
+        expect("Hello, Senkora!").toStrictEqual("Hello, Senkora!");
+        expect("Hello, Senkora!").not.toStrictEqual("Hello, Node!");
+
+        expect(1).toStrictEqual(1);
+        expect(1).not.toStrictEqual(2);
+
+        expect(1.5).toStrictEqual(1.5);
+        expect(1.5).not.toStrictEqual(2.5);
+
+        expect([1, 2, 3]).toStrictEqual([1, 2, 3]);
+        expect([1, 2, 3]).not.toStrictEqual([1, 2, 4]);
+
+        expect({ a: 1, b: 2, c: 3, d: undefined }).toStrictEqual({ a: 1, b: 2, c: 3, d: undefined });
+        expect({ a: 1, b: 2, c: 3, d: undefined }).not.toStrictEqual({ a: 1, b: 2, c: 3, d: null });
+
+        expect(null).toStrictEqual(null);
+        expect(null).not.toStrictEqual(undefined);
+
+        expect(undefined).toStrictEqual(undefined);
+        expect(undefined).not.toStrictEqual(null);
+
+        expect(true).toStrictEqual(true);
+        expect(true).not.toStrictEqual(false);
+    });
+    
     test("toBeEmpty()", () => {
         expect("").toBeEmpty();
         expect([]).toBeEmpty();

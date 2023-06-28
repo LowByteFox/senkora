@@ -185,6 +185,9 @@ namespace testMod
         v8::Local<v8::Function> toEqualFn = v8::Function::New(ctx, testMatcher::toEqualCallback)
                                                 .ToLocalChecked();
 
+        v8::Local<v8::Function> toStrictEqualFn = v8::Function::New(ctx, testMatcher::toStrictEqualCallback)
+                                                      .ToLocalChecked();
+
         v8::Local<v8::Function> toBeTrueFn = v8::Function::New(ctx, testMatcher::toBeTrueCallback)
                                                  .ToLocalChecked();
 
@@ -213,6 +216,7 @@ namespace testMod
         }
 
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toEqual").ToLocalChecked(), toEqualFn).Check();
+        expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toStrictEqual").ToLocalChecked(), toStrictEqualFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeBoolean").ToLocalChecked(), toBeBooleanFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeTrue").ToLocalChecked(), toBeTrueFn).Check();
         expectObj->Set(ctx, v8::String::NewFromUtf8(isolate, "toBeFalse").ToLocalChecked(), toBeFalseFn).Check();
@@ -238,8 +242,6 @@ namespace testMod
                      {
                          v8::Isolate *isolate = info.GetIsolate();
                          v8::HandleScope handleScope(isolate);
-
-                         v8::Local<v8::Value> toEqualFn = info.This()->Get(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "toEqual").ToLocalChecked()).ToLocalChecked();
 
                          // Create a new object with the toEqual function and the negate flag set
                          v8::Local<v8::Object> negatedObj = info.This()->Clone();
