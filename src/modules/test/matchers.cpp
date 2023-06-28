@@ -601,4 +601,67 @@ namespace testMatcher
         ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
         return;
     }
+
+    // expect('hi').toBeOneOf(['hi', 'hello', 'hey'])
+    bool toBeOneOf(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handleScope(isolate);
+
+        if (args.Length() != 1)
+        {
+            Senkora::throwException(ctx, "toBeOneOf() requires 1 argument");
+            return false;
+        }
+
+        bool negate = getNegate(ctx, args.Holder());
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        bool result = false;
+
+        if (actual->IsArray())
+        {
+            v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(actual);
+
+            for (uint32_t i = 0; i < array->Length(); i++)
+            {
+                if (array->Get(ctx, i).ToLocalChecked()->StrictEquals(expected))
+                {
+                    result = true;
+                    break;
+                }
+            }
+        }
+
+        if (negate)
+            result = !result;
+
+        args.GetReturnValue().Set(result ? v8::True(isolate) : v8::False(isolate));
+        return result;
+    }
+
+    void toBeOneOfCallback(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        v8::Local<v8::Context> ctx = args.GetIsolate()->GetCurrentContext();
+
+        bool r = toBeOneOf(args, ctx);
+
+        if (r)
+            return;
+
+        bool negate = getNegate(ctx, args.Holder());
+
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("error"), v8::Boolean::New(args.GetIsolate(), r));
+
+        v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
+        v8::Local<v8::Value> actual = args[0];
+
+        std::string notOrNada = negate ? "[Not] " : "";
+        std::string outExpected = notOrNada + "To have " + stringifyForOutput(ctx, expected);
+        std::string outReceived = stringifyForOutput(ctx, actual);
+
+        ctx->SetEmbedderData(testConst::getTestEmbedderNum("errorStr"), callbackErrOutput(ctx, outExpected, outReceived));
+        return;
+    }
 }

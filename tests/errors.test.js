@@ -55,6 +55,14 @@ describe("expect()", () => {
         expect(false).not.toBeFalse();
     });
 
+    test("toBeOneOf()", () => {
+        expect(1).toBeOneOf([4, 2, 3]);
+    });
+
+    test("not.toBeOneOf()", () => {
+        expect(1).not.toBeOneOf([1, 3, 4]);
+    });
+
     // Async - Related
     test("Async toEqual()", async () => {
         const result = await getBack("Hello, Senkora!");
