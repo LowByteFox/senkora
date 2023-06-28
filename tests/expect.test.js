@@ -144,6 +144,20 @@ describe("expect()", () => {
         expect(null).not.toBeObject();
         expect(undefined).not.toBeObject();
     });
+
+    test("toBeOneOf()", () => {
+        expect(1).toBeOneOf([1, 2, 3]);
+        expect(2).toBeOneOf([1, 2, 3]);
+        expect(3).toBeOneOf([1, 2, 3]);
+        expect(4).not.toBeOneOf([1, 2, 3]);
+        expect(5).not.toBeOneOf([1, 2, 3]);
+        expect(6).not.toBeOneOf([1, 2, 3]);
+        expect("Hello, Senkora!").not.toBeOneOf([1, 2, 3]);
+        expect(true).not.toBeOneOf([1, 2, 3]);
+        expect(false).not.toBeOneOf([1, 2, 3]);
+        expect(null).not.toBeOneOf([1, 2, 3]);
+        expect(undefined).not.toBeOneOf([1, 2, 3]);
+    });
 });
 
 // .then works

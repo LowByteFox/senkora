@@ -38,6 +38,8 @@ namespace testMatcher
     bool toBeObject(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
     void toBeObjectCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
     
+    bool toBeOneOf(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx);
+    void toBeOneOfCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
     // Helper functions
     void compareObjects(v8::Local<v8::Context> &ctx, v8::Local<v8::Object> &expectedObject, v8::Local<v8::Object> &actualObject, bool &result, bool strict);
     void compareArrays(v8::Local<v8::Context> &ctx, v8::Local<v8::Array> &expectedArray, v8::Local<v8::Array> &actualArray, bool &result, bool strict);
