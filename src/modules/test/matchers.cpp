@@ -167,7 +167,7 @@ namespace testMatcher
     bool toEqual(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         bool negate = getNegate(ctx, args.Holder());
 
@@ -232,7 +232,7 @@ namespace testMatcher
 
     bool toStrictEqual(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx) {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         bool negate = getNegate(ctx, args.Holder());
 
@@ -298,7 +298,7 @@ namespace testMatcher
     bool toBeEmpty(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         bool negate = getNegate(ctx, args.Holder());
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
@@ -343,7 +343,7 @@ namespace testMatcher
     bool toBeBoolean(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         bool negate = getNegate(ctx, args.Holder());
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
@@ -382,7 +382,7 @@ namespace testMatcher
     bool toBeTrue(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         if (args.Length() > 0)
         {
@@ -426,7 +426,7 @@ namespace testMatcher
     bool toBeFalse(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         bool negate = getNegate(ctx, args.Holder());
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
@@ -464,7 +464,7 @@ namespace testMatcher
     bool toBeArray(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         bool negate = getNegate(ctx, args.Holder());
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
@@ -505,7 +505,7 @@ namespace testMatcher
     bool toBeArrayOfSize(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         if (args.Length() != 1)
         {
@@ -564,7 +564,7 @@ namespace testMatcher
     bool toBeObject(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx)
     {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         bool negate = getNegate(ctx, args.Holder());
         v8::Local<v8::Value> expected = getExpected(ctx, args.Holder());
@@ -605,7 +605,7 @@ namespace testMatcher
     // expect('hi').toBeOneOf(['hi', 'hello', 'hey'])
     bool toBeOneOf(const v8::FunctionCallbackInfo<v8::Value> &args, v8::Local<v8::Context> ctx) {
         v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handleScope(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
 
         if (args.Length() != 1)
         {
