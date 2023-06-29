@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <Senkora.hpp>
 #include <ObjectBuilder.hpp>
-#include "Error.hpp"
 #include "event.hpp"
 #include "globalThis.hpp"
 #include "peekaboo.hpp"
@@ -202,7 +201,6 @@ void run(std::string nextArg, std::any data) {
     globalObject::AddFunction(isolate, global, "clearTimeout", v8::FunctionTemplate::New(isolate, events::clearTimeout));
     globalObject::AddFunction(isolate, global, "clearImmediate", v8::FunctionTemplate::New(isolate, events::clearImmediate));
     globalObject::AddFunction(isolate, global, "clearInterval", v8::FunctionTemplate::New(isolate, events::clearInterval));
-    globalObject::AddFunction(isolate, global, "SenkoraError", Senkora::Error::makeError(isolate));
     
     v8::Local<v8::ObjectTemplate> senkoraObj = v8::ObjectTemplate::New(isolate);
     senkoraObj->Set(isolate, "version", v8::String::NewFromUtf8(isolate, "0.0.1").ToLocalChecked());
@@ -292,8 +290,7 @@ void runDot(std::string nextArg, std::any args) {
 }
 
 void printVersion([[maybe_unused]] std::string nextArg, [[maybe_unused]] std::any args) {
-    printf(R"(
-Senkora Copyright (C) 2023  SenkoraJS
+    printf(R"(Senkora Copyright (C) 2023  SenkoraJS
 This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
 This is free software, and you are welcome to redistribute it
 under certain conditions; type `show c' for details.

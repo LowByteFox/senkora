@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "peekaboo.hpp"
-#include "Error.hpp"
 #include "Senkora.hpp"
 #include "v8-isolate.h"
 #include "v8-local-handle.h"
@@ -45,7 +44,7 @@ void peekaboo(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Local<v8::Promise> prom = v8::Local<v8::Promise>::Cast(args[0]);
 
     if (prom->State() != v8::Promise::PromiseState::kFulfilled) {
-        args.GetReturnValue().Set(Senkora::Error::returnError(isolate, v8::Undefined(isolate), "Promise is not Fulfilled"));
+        Senkora::throwException(ctx, "Promise is not Fulfilled");
         return;
     } else {
         args.GetReturnValue().Set(prom->Result());
