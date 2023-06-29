@@ -108,10 +108,6 @@ namespace Senkora::Modules {
 
         v8::Local<v8::Module> mod = Senkora::compileScript(ctx, code).ToLocalChecked();
 
-        auto scent = std::make_unique<Senkora::Scent>();
-        scent->num = mod->ScriptId();
-        meta->setScent(std::move(scent));
-
         globals.moduleCache[base] = mod;
 
         globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);

@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SENKORA_API
 #define SENKORA_API
 
-#include "Scent.hpp"
 #include "../eventLoop.hpp"
 #include "v8-exception.h"
 #include "v8-local-handle.h"
@@ -48,14 +47,11 @@ namespace Senkora {
     class MetadataObject {
         private:
             std::map<std::string_view, Metadata> meta;
-            std::unique_ptr<Scent> scent;
 
         public:
             void Set(v8::Local<v8::Context> ctx, const char *key, v8::Local<v8::Value> val);
             v8::Local<v8::Value> Get(const std::string_view& key);
             std::map<std::string_view, Metadata> getMeta() const;
-            void setScent(std::unique_ptr<Scent> scnt);
-            std::unique_ptr<Scent> getScent();
     };
 
     typedef struct {

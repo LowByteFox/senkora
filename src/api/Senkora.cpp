@@ -52,22 +52,12 @@ namespace Senkora
             .value = val};
     }
 
-    void MetadataObject::setScent(std::unique_ptr<Scent> scnt)
-    {
-        this->scent = std::move(scnt);
-    }
-
     v8::Local<v8::Value> MetadataObject::Get(const std::string_view& key) {
         return this->meta[key].value;
     }
 
     std::map<std::string_view, Metadata>  MetadataObject::getMeta() const {
         return this->meta;
-    }
-
-    std::unique_ptr<Scent> MetadataObject::getScent()
-    {
-        return std::move(this->scent);
     }
 
     std::string readFile(const std::string& name)

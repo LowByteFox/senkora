@@ -247,9 +247,6 @@ void run(std::string nextArg, std::any data) {
     }
     v8::Local<v8::Module> mod = maybeMod.ToLocalChecked();
 
-    auto scent = std::make_unique<Senkora::Scent>();
-    meta->setScent(std::move(scent));
-
     globals.moduleCache[filePath.c_str()] = mod;
     globals.moduleMetadatas[mod->ScriptId()] = std::move(meta);
 
